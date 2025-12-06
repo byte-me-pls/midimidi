@@ -7,7 +7,7 @@ public class MidiGameManager : MonoBehaviour
     public float noteSpeed = 800f;
     
     [Header("Optimization (Object Pooling)")]
-    public int initialPoolSize = 50; // Başlangıçta kaç nota üretilsin
+    public int initialPoolSize = 50; 
 
     [Header("Zamanlama & Offset")]
     public float hitOffset = 0f; 
@@ -21,6 +21,10 @@ public class MidiGameManager : MonoBehaviour
     public RectTransform[] laneSpawnPoints;
     public RectTransform notesContainer;  
     public GameObject notePrefab;
+
+    // --- YENİ EKLENEN KISIM: GÖRSEL EFEKTLER ---
+    [Header("Görsel Efektler")]
+    public LaneFeedback[] laneEffects; // Inspector'dan atanacak 12 adet efekt scripti
 
     [Header("Skor Sistemi")]
     public int perfectScore = 100;
@@ -36,7 +40,6 @@ public class MidiGameManager : MonoBehaviour
     private int maxCombo = 0;
     private List<NoteUI>[] activeLanes;
     
-    // --- POOLING SİSTEMİ ---
     private Queue<NoteUI> notePool = new Queue<NoteUI>();
 
     void Awake()
@@ -54,8 +57,13 @@ public class MidiGameManager : MonoBehaviour
     {
         if (hitBar == null) Debug.LogError("Lütfen HitBar referansını ata!");
         if (notesContainer == null) Debug.LogError("Lütfen NotesContainer referansını ata!");
+        
+        // Lane Effect Kontrolü
+        if (laneEffects == null || laneEffects.Length != 12)
+        {
+            Debug.LogWarning("DİKKAT: 12 adet Lane Feedback atanmadı! Görsel efektler çalışmayabilir.");
+        }
 
-        // Havuzu başlangıçta doldur
         InitializePool();
     }
 
@@ -73,7 +81,7 @@ public class MidiGameManager : MonoBehaviour
         NoteUI note = noteObj.GetComponent<NoteUI>();
         if (note == null) note = noteObj.AddComponent<NoteUI>();
         
-        noteObj.SetActive(false); // Başta kapalı olsun
+        noteObj.SetActive(false);
         notePool.Enqueue(note);
         return note;
     }
@@ -84,46 +92,29 @@ public class MidiGameManager : MonoBehaviour
         if (notePrefab == null || notesContainer == null) return;
 
         NoteUI note = null;
+        if (notePool.Count > 0) note = notePool.Dequeue();
+        else { note = CreateNewPoolObject(); note = notePool.Dequeue(); }
 
-        // Havuzda eleman var mı kontrol et
-        if (notePool.Count > 0)
-        {
-            note = notePool.Dequeue();
-        }
-        else
-        {
-            // Havuz boşsa yeni üret (havuzu genişlet)
-            note = CreateNewPoolObject(); 
-            // Create fonksiyonu havuza atıyor, biz hemen kullanacağımız için geri çıkarıyoruz
-            note = notePool.Dequeue(); 
-        }
-
-        // --- KONUMLANDIRMA VE AKTİFLEŞTİRME ---
         note.gameObject.SetActive(true);
         RectTransform noteRect = note.RectTransform;
         RectTransform spawnPoint = laneSpawnPoints[lane];
 
-        // Konum hesaplama (Hiyerarşi uyumlu)
         Vector3 localSpawnPos = notesContainer.InverseTransformPoint(spawnPoint.position);
         noteRect.anchoredPosition = new Vector2(localSpawnPos.x, localSpawnPos.y);
         noteRect.localRotation = Quaternion.identity;
         noteRect.localScale = Vector3.one;
     
-        // Initialize
         note.Initialize(this, lane, noteSpeed);
         activeLanes[lane].Add(note);
     }
 
-    // --- HAVUZA GERİ DÖNDÜRME (Eski RemoveNote yerine bu kullanılacak) ---
     public void ReturnNoteToPool(NoteUI note)
     {
         if (note.LaneIndex >= 0 && note.LaneIndex < activeLanes.Length)
-        {
             activeLanes[note.LaneIndex].Remove(note);
-        }
 
-        note.gameObject.SetActive(false); // Kapat
-        notePool.Enqueue(note);           // Havuza at
+        note.gameObject.SetActive(false); 
+        notePool.Enqueue(note);           
     }
 
     public float GetNoteSignedDistance(RectTransform noteRect)
@@ -134,6 +125,13 @@ public class MidiGameManager : MonoBehaviour
 
     public void OnMidiKeyPressed(int lane)
     {
+        // --- YENİ EKLENEN KISIM: EFEKT TETİKLEME ---
+        // Tuşa basıldığı an o şeridin görsel efektini oynat
+        if (laneEffects != null && lane < laneEffects.Length && laneEffects[lane] != null)
+        {
+            laneEffects[lane].OnLaneHit(1.0f); // Velocity 1.0 (Full güç)
+        }
+
         if (lane < 0 || lane >= activeLanes.Length) return;
 
         List<NoteUI> notes = activeLanes[lane];
@@ -164,10 +162,6 @@ public class MidiGameManager : MonoBehaviour
             RegisterHit(lane, result, closestAbsDistance);
             closestNote.OnHit();
         }
-        else
-        {
-            Debug.Log($"Erken basıldı. Mesafe: {closestAbsDistance:F1}");
-        }
     }
 
     private HitResult EvaluateHit(float distance)
@@ -193,7 +187,6 @@ public class MidiGameManager : MonoBehaviour
         maxCombo = Mathf.Max(maxCombo, combo);
 
         if (scoreDisplay != null) scoreDisplay.ShowJudgement(result);
-        Debug.Log($"<color=cyan>{result}</color> | Dist: {distance:F1}");
     }
 
     public void RegisterMiss(int lane)
@@ -203,28 +196,18 @@ public class MidiGameManager : MonoBehaviour
         if (scoreDisplay != null) scoreDisplay.ShowJudgement(HitResult.Miss);
     }
 
-    public void PrintStats()
-    {
-        Debug.Log($"Score: {totalScore} | Combo: {maxCombo}");
-    }
+    public void PrintStats() { Debug.Log($"Score: {totalScore} | Combo: {maxCombo}"); }
 
     public void ResetGame()
     {
-        // Aktif olan tüm notaları havuza geri gönder
         foreach (var lane in activeLanes)
         {
-            // ToArray kullanıyoruz çünkü döngü içindeyken listeyi değiştireceğiz
             foreach (var note in lane.ToArray()) 
             {
-                if (note != null)
-                {
-                    note.gameObject.SetActive(false);
-                    notePool.Enqueue(note);
-                }
+                if (note != null) { note.gameObject.SetActive(false); notePool.Enqueue(note); }
             }
             lane.Clear();
         }
-
         foreach (HitResult result in System.Enum.GetValues(typeof(HitResult))) hitStats[result] = 0;
         totalScore = 0; combo = 0;
     }
@@ -245,15 +228,12 @@ public class MidiGameManager : MonoBehaviour
         Gizmos.color = new Color(0f, 0.7f, 1f, 0.2f);
         Gizmos.DrawCube(center, new Vector3(okWindow * 2 * scaleX, height, 1));
         Gizmos.DrawWireCube(center, new Vector3(okWindow * 2 * scaleX, height, 1));
-
         Gizmos.color = new Color(1f, 0.92f, 0.016f, 0.3f);
         Gizmos.DrawCube(center, new Vector3(goodWindow * 2 * scaleX, height, 1));
         Gizmos.DrawWireCube(center, new Vector3(goodWindow * 2 * scaleX, height, 1));
-
         Gizmos.color = new Color(0f, 1f, 0f, 0.4f);
         Gizmos.DrawCube(center, new Vector3(perfectWindow * 2 * scaleX, height, 1));
         Gizmos.DrawWireCube(center, new Vector3(perfectWindow * 2 * scaleX, height, 1));
-
         Gizmos.color = Color.red;
         Vector3 missPos = hitBar.position - (Vector3.right * missDistance * scaleX);
         Gizmos.DrawLine(missPos + Vector3.up * (height / 2), missPos - Vector3.up * (height / 2));

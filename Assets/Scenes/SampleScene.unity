@@ -299,6 +299,7 @@ GameObject:
   - component: {fileID: 146607587}
   - component: {fileID: 146607586}
   - component: {fileID: 146607585}
+  - component: {fileID: 146607588}
   m_Layer: 5
   m_Name: 54
   m_TagString: Untagged
@@ -378,6 +379,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 146607583}
   m_CullTransparentMesh: 1
+--- !u!114 &146607588
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 146607583}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690e651ed4a83894c9d6ea3c26d433da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LaneFeedback
+  pressColor: {r: 1, g: 0, b: 0, a: 1}
+  scaleMultiplier: 1.2
+  fadeSpeed: 10
 --- !u!1 &229218731
 GameObject:
   m_ObjectHideFlags: 0
@@ -390,6 +406,7 @@ GameObject:
   - component: {fileID: 229218735}
   - component: {fileID: 229218734}
   - component: {fileID: 229218733}
+  - component: {fileID: 229218736}
   m_Layer: 5
   m_Name: 51
   m_TagString: Untagged
@@ -469,6 +486,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 229218731}
   m_CullTransparentMesh: 1
+--- !u!114 &229218736
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 229218731}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690e651ed4a83894c9d6ea3c26d433da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LaneFeedback
+  pressColor: {r: 1, g: 0, b: 0, a: 1}
+  scaleMultiplier: 1.2
+  fadeSpeed: 10
 --- !u!1 &330585543
 GameObject:
   m_ObjectHideFlags: 0
@@ -618,6 +650,7 @@ GameObject:
   - component: {fileID: 395543325}
   - component: {fileID: 395543324}
   - component: {fileID: 395543323}
+  - component: {fileID: 395543326}
   m_Layer: 5
   m_Name: 53
   m_TagString: Untagged
@@ -697,6 +730,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 395543321}
   m_CullTransparentMesh: 1
+--- !u!114 &395543326
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 395543321}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690e651ed4a83894c9d6ea3c26d433da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LaneFeedback
+  pressColor: {r: 1, g: 0, b: 0, a: 1}
+  scaleMultiplier: 1.2
+  fadeSpeed: 10
 --- !u!1 &402466472
 GameObject:
   m_ObjectHideFlags: 0
@@ -1261,6 +1309,7 @@ GameObject:
   - component: {fileID: 648019311}
   - component: {fileID: 648019310}
   - component: {fileID: 648019309}
+  - component: {fileID: 648019312}
   m_Layer: 5
   m_Name: 57
   m_TagString: Untagged
@@ -1340,6 +1389,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 648019307}
   m_CullTransparentMesh: 1
+--- !u!114 &648019312
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 648019307}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690e651ed4a83894c9d6ea3c26d433da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LaneFeedback
+  pressColor: {r: 1, g: 0, b: 0, a: 1}
+  scaleMultiplier: 1.2
+  fadeSpeed: 10
 --- !u!1 &674218451
 GameObject:
   m_ObjectHideFlags: 0
@@ -1474,6 +1538,19 @@ MonoBehaviour:
   - {fileID: 818343676}
   notesContainer: {fileID: 442716292}
   notePrefab: {fileID: 268718004580442840, guid: f84a05e55aba5f640a02f62355087121, type: 3}
+  laneEffects:
+  - {fileID: 1403975962}
+  - {fileID: 1035836025}
+  - {fileID: 1935603895}
+  - {fileID: 229218736}
+  - {fileID: 712191031}
+  - {fileID: 395543326}
+  - {fileID: 146607588}
+  - {fileID: 1177341847}
+  - {fileID: 2145995668}
+  - {fileID: 648019312}
+  - {fileID: 1667708747}
+  - {fileID: 2081962158}
   perfectScore: 100
   goodScore: 50
   okScore: 25
@@ -1537,7 +1614,7 @@ MonoBehaviour:
   m_PrefabInstance: {fileID: 0}
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 680060716}
-  m_Enabled: 1
+  m_Enabled: 0
   m_EditorHideFlags: 0
   m_Script: {fileID: 11500000, guid: c05a4261b6367854fa0f082fdf6cc19f, type: 3}
   m_Name: 
@@ -1554,6 +1631,7 @@ GameObject:
   - component: {fileID: 712191030}
   - component: {fileID: 712191029}
   - component: {fileID: 712191028}
+  - component: {fileID: 712191031}
   m_Layer: 5
   m_Name: 52
   m_TagString: Untagged
@@ -1633,6 +1711,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 712191026}
   m_CullTransparentMesh: 1
+--- !u!114 &712191031
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 712191026}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690e651ed4a83894c9d6ea3c26d433da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LaneFeedback
+  pressColor: {r: 1, g: 0, b: 0, a: 1}
+  scaleMultiplier: 1.2
+  fadeSpeed: 10
 --- !u!1 &743165734
 GameObject:
   m_ObjectHideFlags: 0
@@ -2040,6 +2133,7 @@ GameObject:
   - component: {fileID: 1035836024}
   - component: {fileID: 1035836023}
   - component: {fileID: 1035836022}
+  - component: {fileID: 1035836025}
   m_Layer: 5
   m_Name: 49
   m_TagString: Untagged
@@ -2119,6 +2213,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1035836020}
   m_CullTransparentMesh: 1
+--- !u!114 &1035836025
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1035836020}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690e651ed4a83894c9d6ea3c26d433da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LaneFeedback
+  pressColor: {r: 1, g: 0, b: 0, a: 1}
+  scaleMultiplier: 1.2
+  fadeSpeed: 10
 --- !u!1 &1063874883
 GameObject:
   m_ObjectHideFlags: 0
@@ -2258,6 +2367,7 @@ GameObject:
   - component: {fileID: 1177341846}
   - component: {fileID: 1177341845}
   - component: {fileID: 1177341844}
+  - component: {fileID: 1177341847}
   m_Layer: 5
   m_Name: 55
   m_TagString: Untagged
@@ -2337,6 +2447,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1177341842}
   m_CullTransparentMesh: 1
+--- !u!114 &1177341847
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1177341842}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690e651ed4a83894c9d6ea3c26d433da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LaneFeedback
+  pressColor: {r: 1, g: 0, b: 0, a: 1}
+  scaleMultiplier: 1.2
+  fadeSpeed: 10
 --- !u!1 &1257177647
 GameObject:
   m_ObjectHideFlags: 0
@@ -2774,6 +2899,7 @@ GameObject:
   - component: {fileID: 1403975960}
   - component: {fileID: 1403975959}
   - component: {fileID: 1403975958}
+  - component: {fileID: 1403975962}
   m_Layer: 5
   m_Name: 48
   m_TagString: Untagged
@@ -2865,6 +2991,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1403975956}
   m_CullTransparentMesh: 1
+--- !u!114 &1403975962
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1403975956}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690e651ed4a83894c9d6ea3c26d433da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LaneFeedback
+  pressColor: {r: 1, g: 0, b: 0, a: 1}
+  scaleMultiplier: 1.2
+  fadeSpeed: 10
 --- !u!1 &1487807283
 GameObject:
   m_ObjectHideFlags: 0
@@ -3018,6 +3159,7 @@ GameObject:
   - component: {fileID: 1667708746}
   - component: {fileID: 1667708745}
   - component: {fileID: 1667708744}
+  - component: {fileID: 1667708747}
   m_Layer: 5
   m_Name: 58
   m_TagString: Untagged
@@ -3097,6 +3239,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1667708742}
   m_CullTransparentMesh: 1
+--- !u!114 &1667708747
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1667708742}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690e651ed4a83894c9d6ea3c26d433da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LaneFeedback
+  pressColor: {r: 1, g: 0, b: 0, a: 1}
+  scaleMultiplier: 1.2
+  fadeSpeed: 10
 --- !u!1 &1740252380
 GameObject:
   m_ObjectHideFlags: 0
@@ -3659,6 +3816,7 @@ GameObject:
   - component: {fileID: 1935603894}
   - component: {fileID: 1935603893}
   - component: {fileID: 1935603892}
+  - component: {fileID: 1935603895}
   m_Layer: 5
   m_Name: 50
   m_TagString: Untagged
@@ -3738,6 +3896,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 1935603890}
   m_CullTransparentMesh: 1
+--- !u!114 &1935603895
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 1935603890}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690e651ed4a83894c9d6ea3c26d433da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LaneFeedback
+  pressColor: {r: 1, g: 0, b: 0, a: 1}
+  scaleMultiplier: 1.2
+  fadeSpeed: 10
 --- !u!1 &1944402480
 GameObject:
   m_ObjectHideFlags: 0
@@ -4251,6 +4424,7 @@ GameObject:
   - component: {fileID: 2081962157}
   - component: {fileID: 2081962156}
   - component: {fileID: 2081962155}
+  - component: {fileID: 2081962158}
   m_Layer: 5
   m_Name: 59
   m_TagString: Untagged
@@ -4330,6 +4504,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2081962153}
   m_CullTransparentMesh: 1
+--- !u!114 &2081962158
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2081962153}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690e651ed4a83894c9d6ea3c26d433da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LaneFeedback
+  pressColor: {r: 1, g: 0, b: 0, a: 1}
+  scaleMultiplier: 1.2
+  fadeSpeed: 10
 --- !u!1 &2115315672
 GameObject:
   m_ObjectHideFlags: 0
@@ -4524,6 +4713,7 @@ GameObject:
   - component: {fileID: 2145995667}
   - component: {fileID: 2145995666}
   - component: {fileID: 2145995665}
+  - component: {fileID: 2145995668}
   m_Layer: 5
   m_Name: 56
   m_TagString: Untagged
@@ -4603,6 +4793,21 @@ CanvasRenderer:
   m_PrefabAsset: {fileID: 0}
   m_GameObject: {fileID: 2145995663}
   m_CullTransparentMesh: 1
+--- !u!114 &2145995668
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 2145995663}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 690e651ed4a83894c9d6ea3c26d433da, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::LaneFeedback
+  pressColor: {r: 1, g: 0, b: 0, a: 1}
+  scaleMultiplier: 1.2
+  fadeSpeed: 10
 --- !u!1660057539 &9223372036854775807
 SceneRoots:
   m_ObjectHideFlags: 0
