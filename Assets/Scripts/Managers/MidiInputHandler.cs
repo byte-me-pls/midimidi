@@ -8,8 +8,6 @@ public class MidiInputHandler : MonoBehaviour
     public MidiGameManager gameManager;
 
     [Header("MIDI Ayarları")]
-    // İSTEĞİN ÜZERİNE GÜNCELLENDİ: 48'den 59'a kadar olan notalar
-    // 48=Lane0, 49=Lane1 ... 59=Lane11
     public int[] noteToLaneMap = new int[12] 
     { 
         48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59 
@@ -30,15 +28,12 @@ public class MidiInputHandler : MonoBehaviour
     void Start()
     {
         Debug.Log("═══ MIDI INPUT HANDLER (MidiJack) ═══");
-        Debug.Log($"Dinlenen Notalar: {noteToLaneMap[0]} - {noteToLaneMap[noteToLaneMap.Length-1]} arası");
     }
 
     void Update()
     {
-        // 1. MIDI Girişini Kontrol Et
         HandleMidiInput();
 
-        // 2. Klavye ile Test Et
         if (useKeyboardForTesting)
         {
             HandleKeyboardInput();
@@ -51,11 +46,17 @@ public class MidiInputHandler : MonoBehaviour
         {
             int midiNoteNumber = noteToLaneMap[i];
 
-            // MidiJack ile tuşa basılma anını yakala
+            // 1. BASMA (Ses Başlar)
             if (MidiMaster.GetKeyDown(midiNoteNumber))
             {
                 float velocity = MidiMaster.GetKey(midiNoteNumber);
                 OnNotePressed(i, velocity, "MIDI");
+            }
+
+            // 2. BIRAKMA (Ses Durur) - BU KISIM EKSİKTİ
+            if (MidiMaster.GetKeyUp(midiNoteNumber))
+            {
+                OnNoteReleased(i, "MIDI");
             }
         }
     }
@@ -64,9 +65,16 @@ public class MidiInputHandler : MonoBehaviour
     {
         for (int i = 0; i < testKeys.Length && i < 12; i++)
         {
+            // 1. BASMA
             if (Input.GetKeyDown(testKeys[i]))
             {
                 OnNotePressed(i, 1.0f, "Keyboard");
+            }
+
+            // 2. BIRAKMA - BU KISIM EKSİKTİ
+            if (Input.GetKeyUp(testKeys[i]))
+            {
+                OnNoteReleased(i, "Keyboard");
             }
         }
     }
@@ -77,12 +85,18 @@ public class MidiInputHandler : MonoBehaviour
         {
             gameManager.OnMidiKeyPressed(lane);
         }
+        if (showDebugLog) Debug.Log($"[{source} BASILDI] Lane: {lane}");
+    }
 
-        if (showDebugLog)
+    // YENİ EKLENEN BIRAKMA FONKSİYONU
+    private void OnNoteReleased(int lane, string source)
+    {
+        if (gameManager != null)
         {
-            int noteNum = noteToLaneMap[lane];
-            Debug.Log($"[{source}] Note: {noteNum} -> Lane: {lane} (Vel: {velocity:F2})");
+            // Manager'a "Bıraktı" haberini yolluyoruz
+            gameManager.OnMidiKeyReleased(lane);
         }
+        if (showDebugLog) Debug.Log($"[{source} BIRAKILDI] Lane: {lane}");
     }
 
     void OnValidate()

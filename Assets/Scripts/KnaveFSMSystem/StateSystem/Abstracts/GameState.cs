@@ -5,6 +5,6 @@ namespace KnaveFSMSystem.StateSystem.Abstracts
 {
     public abstract class GameState : BaseState<PlayerControllerMachine, ButterFlyStates>
     {
-        protected MidiGameManager MidiGameManager => Context.MidiGameManager;
+
     }
 }

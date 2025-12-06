@@ -7,8 +7,11 @@ public class CodeDrawnAccuracyBar : MonoBehaviour
     public MidiGameManager gameManager;
 
     [Header("Game Logic")]
-    public int lowAccuracyIndex = 0; // <-- ARTACAK OLAN INDEX
-    private bool isBelowThreshold = false; // Tekrar tekrar artmasını önleyen bayrak
+    public int lowAccuracyIndex = 0; // Ceza Sayısı
+    public float penaltyInterval = 3.0f; // Kaç saniyede bir ceza artsın?
+    
+    private bool isBelowThreshold = false; 
+    private float penaltyTimer = 0f; // Süreyi tutacak sayaç
 
     [Header("Konum Ayarları")]
     public float bottomOffset = 100f; 
@@ -35,6 +38,7 @@ public class CodeDrawnAccuracyBar : MonoBehaviour
 
     void Update()
     {
+        // 1. Accuracy Hesapla
         if (gameManager != null)
         {
             var stats = gameManager.GetHitStats();
@@ -52,25 +56,41 @@ public class CodeDrawnAccuracyBar : MonoBehaviour
             targetAccuracy = 1f;
         }
 
-        // --- YENİ EKLENEN MANTIK ---
-        // Eğer Doğruluk %30'un (0.3) altındaysa
+        // --- GÜNCELLENMİŞ MANTIK (ZAMANLAYICI DAHİL) ---
+        
+        // Eğer Accuracy %30'un altındaysa
         if (targetAccuracy < 0.3f)
         {
-            // Ve daha önce bu düşüşü kaydetmediysek
+            // A. İLK GİRİŞ ANI
             if (!isBelowThreshold)
             {
-                lowAccuracyIndex++; // Indexi arttır
-                isBelowThreshold = true; // Bayrağı kaldır (tekrar artmasın diye)
-                Debug.Log($"DİKKAT! Accuracy Kritik Seviyede! Index: {lowAccuracyIndex}");
+                lowAccuracyIndex++; // İlk cezayı kes
+                isBelowThreshold = true;
+                penaltyTimer = 0f; // Sayacı sıfırla
+                Debug.Log($"KRİTİK SEVİYE! İlk Ceza. Index: {lowAccuracyIndex}");
+            }
+            // B. ZATEN AŞAĞIDA VE BEKLİYORSA
+            else
+            {
+                // Sayacı çalıştır
+                penaltyTimer += Time.deltaTime;
+
+                // 3 saniye doldu mu?
+                if (penaltyTimer >= penaltyInterval)
+                {
+                    lowAccuracyIndex++; // Ekstra ceza kes
+                    penaltyTimer = 0f; // Sayacı sıfırla (tekrar 3 sn sayması için)
+                    Debug.Log($"KRİTİK SÜRE DOLDU! Ekstra Ceza. Index: {lowAccuracyIndex}");
+                }
             }
         }
         else
         {
-            // Eğer accuracy tekrar %30'un üzerine çıkarsa bayrağı indir
-            // Böylece ilerde tekrar düşerse yeniden sayabiliriz.
+            // Accuracy düzelirse her şeyi sıfırla
             isBelowThreshold = false;
+            penaltyTimer = 0f;
         }
-        // ---------------------------
+        // -----------------------------------------------
 
         currentAccuracy = Mathf.Lerp(currentAccuracy, targetAccuracy, Time.deltaTime * 5f);
     }

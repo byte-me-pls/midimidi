@@ -2,65 +2,88 @@ using UnityEngine;
 using UnityEngine.UI;
 
 [RequireComponent(typeof(RectTransform))]
+[RequireComponent(typeof(AudioSource))]
 public class LaneFeedback : MonoBehaviour
 {
     [Header("Efekt Ayarları")]
-    public Color pressColor = Color.red;     // Basılınca olacak renk
-    public float scaleMultiplier = 1.2f;     // Ne kadar büyüyeceği (örn: 1.2 katı)
-    public float fadeSpeed = 10f;            // Normale dönme hızı
+    public Color pressColor = Color.red;
+    public float scaleMultiplier = 1.2f;
+    public float fadeSpeed = 10f;
+
+    [Header("Ses Ayarları")]
+    public AudioClip tapSound;
+    [Range(0f, 1f)] public float volume = 1f;
 
     private Vector3 baseScale;
     private Color baseColor;
     private Image targetImage;
     private RectTransform rectTransform;
+    private AudioSource audioSource;
     
-    // Anlık efekt değeri (1 = tam basılı, 0 = normal)
     private float currentIntensity = 0f;
+    private bool isHolding = false; // Tuşa basılı tutuluyor mu?
 
     void Awake()
     {
         rectTransform = GetComponent<RectTransform>();
         targetImage = GetComponent<Image>();
+        audioSource = GetComponent<AudioSource>();
 
-        // Başlangıç değerlerini kaydet
         baseScale = rectTransform.localScale;
         
         if (targetImage != null)
         {
             baseColor = targetImage.color;
         }
+
+        audioSource.playOnAwake = false;
+        audioSource.clip = tapSound; // Clip'i kaynağa ata
     }
 
+    // TUŞA BASINCA (NOTE ON)
     public void OnLaneHit(float velocity = 1.0f)
     {
-        // Vuruş geldiğinde yoğunluğu artır (Velocity'ye göre şiddeti değişebilir)
         currentIntensity = 1f * velocity;
+        isHolding = true;
+
+        if (audioSource != null && tapSound != null)
+        {
+            audioSource.volume = volume * velocity;
+            audioSource.Play(); // Sesi başlat
+        }
+    }
+
+    // TUŞU BIRAKINCA (NOTE OFF) - YENİ FONKSİYON
+    public void OnLaneRelease()
+    {
+        isHolding = false;
+
+        if (audioSource != null)
+        {
+            audioSource.Stop(); // Sesi anında kes
+        }
     }
 
     void Update()
     {
-        // Efekt varsa uygula
-        if (currentIntensity > 0.001f)
+        // Tuşa basılı tutuyorsa görsel efekti canlı tut
+        if (isHolding)
         {
-            // 1. Scale Efekti (Senin kodundaki mantık)
-            float s = 1f + (currentIntensity * (scaleMultiplier - 1f));
-            rectTransform.localScale = baseScale * s;
-
-            // 2. Renk Efekti (Kırmızıya dönme)
-            if (targetImage != null)
-            {
-                targetImage.color = Color.Lerp(baseColor, pressColor, currentIntensity);
-            }
-
-            // Zamanla normale dön (Lerp benzeri sönümleme)
-            currentIntensity = Mathf.Lerp(currentIntensity, 0f, Time.deltaTime * fadeSpeed);
+            currentIntensity = Mathf.Lerp(currentIntensity, 1f, Time.deltaTime * 10f);
         }
         else
         {
-            // Tamamen normale sabitle (titremeyi önlemek için)
-            rectTransform.localScale = baseScale;
-            if (targetImage != null) targetImage.color = baseColor;
-            currentIntensity = 0f;
+            // Bıraktıysa yavaşça sönsün
+            currentIntensity = Mathf.Lerp(currentIntensity, 0f, Time.deltaTime * fadeSpeed);
+        }
+
+        // Görseli uygula
+        float s = 1f + (currentIntensity * (scaleMultiplier - 1f));
+        rectTransform.localScale = baseScale * s;
+
+        if (targetImage != null)
+        {
+            targetImage.color = Color.Lerp(baseColor, pressColor, currentIntensity);
         }
     }
 }

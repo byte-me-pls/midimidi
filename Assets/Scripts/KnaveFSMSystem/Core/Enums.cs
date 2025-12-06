@@ -2,8 +2,13 @@
 {
     public enum ButterFlyStates
     {
-       Idle,
-       Walk,
+       none,
+       bir,
+       iki,
+       uc,
+       dort,
+       bes,
+       altı
     }
     
    

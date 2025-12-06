@@ -1,13 +1,12 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
 using System;
-using System.Text.RegularExpressions; // Regex kütüphanesini ekledik
+using System.Text.RegularExpressions;
 
 [System.Serializable]
 public class SongData
 {
     public int bpm;
-    // JsonUtility bunu görmezden gelecek ama biz manuel dolduracağız
     public List<List<int>> notes = new List<List<int>>();
 }
 
@@ -59,7 +58,6 @@ public class SongPlayer : MonoBehaviour
     {
         try
         {
-            // STANDART YÖNTEM YERİNE ÖZEL PARSER KULLANIYORUZ
             song = ParseCustomJson(jsonFile.text);
 
             if (song == null || song.notes == null || song.notes.Count == 0)
@@ -74,18 +72,22 @@ public class SongPlayer : MonoBehaviour
                 song.bpm = 120;
             }
 
-            beatInterval = 60f / song.bpm;
+            // --- DEĞİŞİKLİK 1: SÜREYİ 2 KATINA ÇIKARIYORUZ ---
+            // Notaları 2'şer atlayacağımız için bekleme süresini de 2 ile çarpıyoruz.
+            // Yoksa şarkı 2 kat hızlı çalar.
+            beatInterval = (60f / song.bpm) * 2; 
+            
             timer = 0f;
             currentBeatIndex = 0;
             songLoaded = true;
 
             if (showDebugInfo)
             {
-                Debug.Log($"<color=green>═══ ŞARKI YÜKLENDİ (MANUEL PARSE) ═══</color>");
-                Debug.Log($"Dosya: {jsonFile.name}");
+                Debug.Log($"<color=green>═══ ŞARKI YÜKLENDİ (2x STEP MODU) ═══</color>");
                 Debug.Log($"BPM: {song.bpm}");
                 Debug.Log($"Beat Sayısı: {song.notes.Count}");
-                Debug.Log($"Beat Aralığı: {beatInterval:F3} saniye");
+                // Toplam süreyi de doğru göstermek için 2'ye bölmüyoruz (array boyutu aynı ama atlıyoruz)
+                Debug.Log($"Tahmini Süre: ~{((song.notes.Count / 2) * beatInterval):F1} saniye");
             }
         }
         catch (System.Exception e)
@@ -95,47 +97,28 @@ public class SongPlayer : MonoBehaviour
         }
     }
 
-    /// <summary>
-    /// Unity JsonUtility'nin okuyamadığı iç içe listeleri ([[1,0...]]) okumak için özel parser.
-    /// </summary>
     SongData ParseCustomJson(string jsonText)
     {
         SongData data = new SongData();
         data.notes = new List<List<int>>();
 
-        // 1. BPM'i Regex ile bul
         var bpmMatch = Regex.Match(jsonText, "\"bpm\"\\s*:\\s*(\\d+)");
-        if (bpmMatch.Success)
-        {
-            data.bpm = int.Parse(bpmMatch.Groups[1].Value);
-        }
-        else
-        {
-            data.bpm = 120; // Varsayılan
-        }
+        data.bpm = bpmMatch.Success ? int.Parse(bpmMatch.Groups[1].Value) : 120;
 
-        // 2. "notes": [ ... ] bloğunun içini bul
         int notesStartIndex = jsonText.IndexOf("\"notes\"");
         if (notesStartIndex == -1) return data;
 
-        // Notes'un başladığı ilk '[' karakterini bul
         int arrayOpenIndex = jsonText.IndexOf('[', notesStartIndex);
-        // Dosyanın sonundaki ']' karakterini bul (kabaca son '}' den öncesi)
         int arrayCloseIndex = jsonText.LastIndexOf(']');
 
         if (arrayOpenIndex == -1 || arrayCloseIndex == -1) return data;
 
-        // Sadece array içeriğini al: [[1,0...], [0,1...]]
         string notesContent = jsonText.Substring(arrayOpenIndex + 1, arrayCloseIndex - arrayOpenIndex - 1);
-
-        // 3. İçteki [ ... ] bloklarını Regex ile yakala
-        // Bu desen, köşeli parantez içindeki sayıları ve virgülleri yakalar
         MatchCollection beatMatches = Regex.Matches(notesContent, @"\[([\d,\s]+)\]");
 
         foreach (Match match in beatMatches)
         {
-            string content = match.Groups[1].Value; // Parantez içindeki "1, 0, 0, ..." stringi
-            
+            string content = match.Groups[1].Value;
             List<int> beatLine = new List<int>();
             string[] numbers = content.Split(',');
 
@@ -147,7 +130,6 @@ public class SongPlayer : MonoBehaviour
                 }
             }
 
-            // Eğer satırda veri varsa listeye ekle
             if (beatLine.Count > 0)
             {
                 data.notes.Add(beatLine);
@@ -167,10 +149,7 @@ public class SongPlayer : MonoBehaviour
             if (startDelay <= 0)
             {
                 isPlaying = true;
-                if (showDebugInfo)
-                {
-                    Debug.Log("<color=yellow>♪ ŞARKI BAŞLADI ♪</color>");
-                }
+                if (showDebugInfo) Debug.Log("<color=yellow>♪ ŞARKI BAŞLADI ♪</color>");
             }
             return;
         }
@@ -206,13 +185,13 @@ public class SongPlayer : MonoBehaviour
             }
         }
 
-        currentBeatIndex++;
+        // --- DEĞİŞİKLİK 2: İNDEXİ 2 ARTIRIYORUZ ---
+        currentBeatIndex += 2;
     }
 
     void OnSongComplete()
     {
         if (!isPlaying) return;
-
         isPlaying = false;
 
         if (showDebugInfo)
@@ -221,29 +200,17 @@ public class SongPlayer : MonoBehaviour
             manager.PrintStats();
         }
 
-        if (loopSong)
-        {
-            RestartSong();
-        }
+        if (loopSong) RestartSong();
     }
 
     public void StartSong()
     {
-        if (!songLoaded)
-        {
-            Debug.LogError("Şarkı yüklenemedi, başlatılamıyor!");
-            return;
-        }
-
+        if (!songLoaded) return;
         startDelay = delayBeforeStart;
         isPlaying = false;
         timer = 0f;
         currentBeatIndex = 0;
-
-        if (showDebugInfo)
-        {
-            Debug.Log($"Şarkı {delayBeforeStart} saniye içinde başlayacak...");
-        }
+        if (showDebugInfo) Debug.Log($"Şarkı {delayBeforeStart} saniye içinde başlayacak...");
     }
 
     public void RestartSong()
@@ -252,18 +219,12 @@ public class SongPlayer : MonoBehaviour
         currentBeatIndex = 0;
         startDelay = delayBeforeStart;
         isPlaying = false;
-
-        if (manager != null)
-        {
-            manager.ResetGame();
-        }
-
-        if (showDebugInfo)
-        {
-            Debug.Log("Şarkı yeniden başlatılıyor...");
-        }
+        if (manager != null) manager.ResetGame();
+        if (showDebugInfo) Debug.Log("Şarkı yeniden başlatılıyor...");
     }
 
     public bool IsPlaying => isPlaying;
+    // Progress barı doğru göstermek için hesaplamayı da güncelleyebiliriz ama 
+    // oran olarak index/count mantığı hala geçerli sayılır.
     public float Progress => song != null && song.notes.Count > 0 ? (float)currentBeatIndex / song.notes.Count : 0f;
 }

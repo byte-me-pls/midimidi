@@ -23,11 +23,52 @@ namespace KnaveFSMSystem.Machines
 
             yield return new Transition<PlayerControllerMachine, ButterFlyStates>(
                 "Bad Accuracy -> Stumble", 
-                ButterFlyStates.Walk, 
-                ButterFlyStates.Walk,
+                ButterFlyStates.none, 
+                ButterFlyStates.bir,
                 // CodeDrawnAccuracyBar scriptine ulaşıp indexi kontrol ediyoruz
-                ctx =>  _CodeDrawnAccuracyBar.lowAccuracyIndex > 0, 
+                ctx =>  _CodeDrawnAccuracyBar.lowAccuracyIndex == 1, 
                 priority: 1);
+            
+            yield return new Transition<PlayerControllerMachine, ButterFlyStates>(
+                "Bad Accuracy -> Stumble", 
+                ButterFlyStates.bir, 
+                ButterFlyStates.iki,
+                // CodeDrawnAccuracyBar scriptine ulaşıp indexi kontrol ediyoruz
+                ctx =>  _CodeDrawnAccuracyBar.lowAccuracyIndex > 2, 
+                priority: 3);
+            
+            yield return new Transition<PlayerControllerMachine, ButterFlyStates>(
+                "Bad Accuracy -> Stumble", 
+                ButterFlyStates.iki, 
+                ButterFlyStates.uc,
+                // CodeDrawnAccuracyBar scriptine ulaşıp indexi kontrol ediyoruz
+                ctx =>  _CodeDrawnAccuracyBar.lowAccuracyIndex > 4, 
+                priority: 3);
+
+            yield return new Transition<PlayerControllerMachine, ButterFlyStates>(
+                "Bad Accuracy -> Stumble", 
+                ButterFlyStates.uc, 
+                ButterFlyStates.dort,
+                // CodeDrawnAccuracyBar scriptine ulaşıp indexi kontrol ediyoruz
+                ctx =>  _CodeDrawnAccuracyBar.lowAccuracyIndex > 6, 
+                priority: 3);
+
+            yield return new Transition<PlayerControllerMachine, ButterFlyStates>(
+                "Bad Accuracy -> Stumble", 
+                ButterFlyStates.dort, 
+                ButterFlyStates.bes,
+                // CodeDrawnAccuracyBar scriptine ulaşıp indexi kontrol ediyoruz
+                ctx =>  _CodeDrawnAccuracyBar.lowAccuracyIndex > 8, 
+                priority: 3);
+
+            yield return new Transition<PlayerControllerMachine, ButterFlyStates>(
+                "Bad Accuracy -> Stumble", 
+                ButterFlyStates.bes, 
+                ButterFlyStates.altı,
+                // CodeDrawnAccuracyBar scriptine ulaşıp indexi kontrol ediyoruz
+                ctx =>  _CodeDrawnAccuracyBar.lowAccuracyIndex > 10, 
+                priority: 3);
+
             
             // ALTERNATİF: Eğer "Son 3 vuruş Miss ise" gibi bir şey istersen:
             /*
@@ -42,6 +83,7 @@ namespace KnaveFSMSystem.Machines
 
         public override void Update()
         {
+            Debug.Log(currentState);
         }
 
         public override void LateUpdate()

@@ -1,0 +1,177 @@
+%YAML 1.1
+%TAG !u! tag:unity3d.com,2011:
+--- !u!1 &6991788218313387414
+GameObject:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  serializedVersion: 6
+  m_Component:
+  - component: {fileID: 3583380614914532700}
+  - component: {fileID: 6398096103039742995}
+  - component: {fileID: 3489472716967485734}
+  - component: {fileID: 4058090424750759560}
+  - component: {fileID: 4745931749215648843}
+  - component: {fileID: 6449856301751574788}
+  - component: {fileID: 1167508529985059323}
+  m_Layer: 0
+  m_Name: Managers
+  m_TagString: Untagged
+  m_Icon: {fileID: 0}
+  m_NavMeshLayer: 0
+  m_StaticEditorFlags: 0
+  m_IsActive: 1
+--- !u!4 &3583380614914532700
+Transform:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6991788218313387414}
+  serializedVersion: 2
+  m_LocalRotation: {x: 0, y: 0, z: 0, w: 1}
+  m_LocalPosition: {x: 3.62499, y: -1.93954, z: -1.63283}
+  m_LocalScale: {x: 1, y: 1, z: 1}
+  m_ConstrainProportionsScale: 0
+  m_Children: []
+  m_Father: {fileID: 0}
+  m_LocalEulerAnglesHint: {x: 0, y: 0, z: 0}
+--- !u!114 &6398096103039742995
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6991788218313387414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: f648feff4442452781bb3269aee5f8ae, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::GameController
+  gameManager: {fileID: 3489472716967485734}
+  songPlayer: {fileID: 4745931749215648843}
+  pauseKey: 27
+  restartKey: 114
+  statsKey: 9
+--- !u!114 &3489472716967485734
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6991788218313387414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 6c17f5315742d8c43b76fe1584b4777a, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MidiGameManager
+  noteSpeed: 150
+  initialPoolSize: 75
+  hitOffset: 3.01
+  perfectWindow: 9.56
+  goodWindow: 130.1
+  okWindow: 211.7
+  missDistance: 30
+  hitBar: {fileID: 0}
+  laneSpawnPoints:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  notesContainer: {fileID: 0}
+  notePrefab: {fileID: 268718004580442840, guid: f84a05e55aba5f640a02f62355087121, type: 3}
+  laneEffects:
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  - {fileID: 0}
+  perfectScore: 100
+  goodScore: 50
+  okScore: 25
+  scoreDisplay: {fileID: 0}
+  hitHistory: 
+--- !u!114 &4058090424750759560
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6991788218313387414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 36b9364b3aa34265b547497be1b1777b, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MidiInputHandler
+  gameManager: {fileID: 3489472716967485734}
+  noteToLaneMap: 3400000035000000360000003700000038000000390000003a0000003b0000003c0000003d0000003e0000003f000000
+  useKeyboardForTesting: 1
+  testKeys: 7a00000073000000780000006400000063000000760000006700000062000000680000006e0000006a0000006d000000
+  showDebugLog: 1
+--- !u!114 &4745931749215648843
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6991788218313387414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 19c03418994d4a76bccac8318bc31c15, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::SongPlayer
+  jsonFile: {fileID: 4900000, guid: 5287e359bfc2d8044b13b1375af55eb2, type: 3}
+  manager: {fileID: 3489472716967485734}
+  autoPlayOnStart: 1
+  delayBeforeStart: 2
+  loopSong: 0
+  showDebugInfo: 1
+--- !u!114 &6449856301751574788
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6991788218313387414}
+  m_Enabled: 0
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: c05a4261b6367854fa0f082fdf6cc19f, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::MidiBuildDebugger
+--- !u!114 &1167508529985059323
+MonoBehaviour:
+  m_ObjectHideFlags: 0
+  m_CorrespondingSourceObject: {fileID: 0}
+  m_PrefabInstance: {fileID: 0}
+  m_PrefabAsset: {fileID: 0}
+  m_GameObject: {fileID: 6991788218313387414}
+  m_Enabled: 1
+  m_EditorHideFlags: 0
+  m_Script: {fileID: 11500000, guid: 341f332565b71e249a8e21fd73517032, type: 3}
+  m_Name: 
+  m_EditorClassIdentifier: Assembly-CSharp::DebugAccuracyBar
+  gameManager: {fileID: 3489472716967485734}
+  lowAccuracyIndex: 0
+  bottomOffset: 70
+  width: 500
+  height: 30
+  fullColor: {r: 0, g: 1, b: 0, a: 1}
+  midColor: {r: 1, g: 0.92156863, b: 0.015686275, a: 1}
+  lowColor: {r: 1, g: 0, b: 0, a: 1}
+  backgroundColor: {r: 0, g: 0, b: 0, a: 0.5}
