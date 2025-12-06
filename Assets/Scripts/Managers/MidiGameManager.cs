@@ -22,9 +22,8 @@ public class MidiGameManager : MonoBehaviour
     public RectTransform notesContainer;  
     public GameObject notePrefab;
 
-    // --- YENİ EKLENEN KISIM: GÖRSEL EFEKTLER ---
     [Header("Görsel Efektler")]
-    public LaneFeedback[] laneEffects; // Inspector'dan atanacak 12 adet efekt scripti
+    public LaneFeedback[] laneEffects; 
 
     [Header("Skor Sistemi")]
     public int perfectScore = 100;
@@ -34,12 +33,17 @@ public class MidiGameManager : MonoBehaviour
     [Header("UI Display")]
     public ScoreDisplayUI scoreDisplay;
     
+    // --- MEVCUT İSTATİSTİKLER ---
     private Dictionary<HitResult, int> hitStats = new Dictionary<HitResult, int>();
     private int totalScore = 0;
     private int combo = 0;
     private int maxCombo = 0;
-    private List<NoteUI>[] activeLanes;
     
+    // --- YENİ EKLENEN KISIM: VURUŞ GEÇMİŞİ LİSTESİ ---
+    [Header("Detaylı İstatistikler")]
+    public List<HitResult> hitHistory = new List<HitResult>(); 
+
+    private List<NoteUI>[] activeLanes;
     private Queue<NoteUI> notePool = new Queue<NoteUI>();
 
     void Awake()
@@ -58,7 +62,6 @@ public class MidiGameManager : MonoBehaviour
         if (hitBar == null) Debug.LogError("Lütfen HitBar referansını ata!");
         if (notesContainer == null) Debug.LogError("Lütfen NotesContainer referansını ata!");
         
-        // Lane Effect Kontrolü
         if (laneEffects == null || laneEffects.Length != 12)
         {
             Debug.LogWarning("DİKKAT: 12 adet Lane Feedback atanmadı! Görsel efektler çalışmayabilir.");
@@ -125,11 +128,9 @@ public class MidiGameManager : MonoBehaviour
 
     public void OnMidiKeyPressed(int lane)
     {
-        // --- YENİ EKLENEN KISIM: EFEKT TETİKLEME ---
-        // Tuşa basıldığı an o şeridin görsel efektini oynat
         if (laneEffects != null && lane < laneEffects.Length && laneEffects[lane] != null)
         {
-            laneEffects[lane].OnLaneHit(1.0f); // Velocity 1.0 (Full güç)
+            laneEffects[lane].OnLaneHit(1.0f); 
         }
 
         if (lane < 0 || lane >= activeLanes.Length) return;
@@ -174,6 +175,9 @@ public class MidiGameManager : MonoBehaviour
 
     public void RegisterHit(int lane, HitResult result, float distance)
     {
+        // --- LİSTEYE EKLEME ---
+        hitHistory.Add(result);
+
         hitStats[result]++;
         int score = 0;
         switch (result)
@@ -191,6 +195,9 @@ public class MidiGameManager : MonoBehaviour
 
     public void RegisterMiss(int lane)
     {
+        // --- LİSTEYE EKLEME ---
+        hitHistory.Add(HitResult.Miss);
+
         hitStats[HitResult.Miss]++;
         combo = 0;
         if (scoreDisplay != null) scoreDisplay.ShowJudgement(HitResult.Miss);
@@ -209,6 +216,10 @@ public class MidiGameManager : MonoBehaviour
             lane.Clear();
         }
         foreach (HitResult result in System.Enum.GetValues(typeof(HitResult))) hitStats[result] = 0;
+        
+        // --- LİSTEYİ TEMİZLE ---
+        hitHistory.Clear();
+
         totalScore = 0; combo = 0;
     }
 

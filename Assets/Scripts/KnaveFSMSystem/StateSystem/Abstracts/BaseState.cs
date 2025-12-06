@@ -15,6 +15,7 @@ namespace KnaveFSMSystem.StateSystem.Abstracts
         public virtual void Initialize(TContext context)
         {
             Context = context;
+            Context = context;
         }
 
         public virtual void EnterState()

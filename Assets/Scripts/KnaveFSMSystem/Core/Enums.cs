@@ -1,22 +1,11 @@
 ﻿namespace KnaveFSMSystem.Core
 {
-    public enum ControllerStates
+    public enum ButterFlyStates
     {
-        None, 
-        Idle, 
-        Sprinting, 
-        AimWalk,
-        AimIdle,
-        Walk, 
-        Dodge, 
-        Fall
+       Idle,
+       Walk,
     }
     
-    public enum CombatStates
-    {
-        None,
-        Aiming,
-        Shooting
-    }
+   
 
 } 
