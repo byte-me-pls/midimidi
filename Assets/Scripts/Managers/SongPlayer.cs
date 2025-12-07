@@ -1,6 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
-using System.Collections; // Coroutine için gerekli
+using System.Collections;
 using System;
 using System.Text.RegularExpressions;
 
@@ -17,14 +17,17 @@ public class SongPlayer : MonoBehaviour
     public TextAsset jsonFile;
     public MidiGameManager manager;
 
+    [Header("UI Referansları")]
+    [Tooltip("Oyun bittiğinde açılacak olan Panel (Canvas içindeki)")]
+    public GameObject gameEndUI; // YENİ: Bitiş ekranı paneli
+
     [Header("Ayarlar")]
     public bool autoPlayOnStart = true;
     public float delayBeforeStart = 2f;
     public bool loopSong = false;
 
     [Header("Bitiş Ayarları")]
-    [Tooltip("Şarkı bittikten kaç saniye sonra oyun donsun?")]
-    public float stopGameDelay = 5f; // İsteğine göre 5 saniye varsayılan
+    public float stopGameDelay = 5f;
 
     [Header("Debug")]
     public bool showDebugInfo = true;
@@ -39,6 +42,9 @@ public class SongPlayer : MonoBehaviour
 
     void Start()
     {
+        // Başlangıçta bitiş ekranı açıksa kapatalım
+        if (gameEndUI != null) gameEndUI.SetActive(false);
+
         if (jsonFile == null)
         {
             Debug.LogError("SongPlayer: JSON dosyası atanmadı!");
@@ -71,13 +77,8 @@ public class SongPlayer : MonoBehaviour
                 return;
             }
 
-            if (song.bpm <= 0)
-            {
-                Debug.LogWarning("Geçersiz BPM, 120'ye ayarlandı");
-                song.bpm = 120;
-            }
+            if (song.bpm <= 0) song.bpm = 120;
 
-            // 2x Step Modu (Notaları 2'şer atladığımız için süreyi çarpıyoruz)
             beatInterval = (60f / song.bpm) * 2; 
             
             timer = 0f;
@@ -86,15 +87,12 @@ public class SongPlayer : MonoBehaviour
 
             if (showDebugInfo)
             {
-                Debug.Log($"<color=green>═══ ŞARKI YÜKLENDİ (2x STEP MODU) ═══</color>");
-                Debug.Log($"BPM: {song.bpm}");
-                Debug.Log($"Beat Sayısı: {song.notes.Count}");
-                Debug.Log($"Tahmini Süre: ~{((song.notes.Count / 2) * beatInterval):F1} saniye");
+                Debug.Log($"<color=green>ŞARKI YÜKLENDİ. Süre: ~{((song.notes.Count / 2) * beatInterval):F1} sn</color>");
             }
         }
         catch (System.Exception e)
         {
-            Debug.LogError($"JSON parse hatası: {e.Message}\nStack: {e.StackTrace}");
+            Debug.LogError($"JSON hatası: {e.Message}");
             songLoaded = false;
         }
     }
@@ -112,7 +110,6 @@ public class SongPlayer : MonoBehaviour
 
         int arrayOpenIndex = jsonText.IndexOf('[', notesStartIndex);
         int arrayCloseIndex = jsonText.LastIndexOf(']');
-
         if (arrayOpenIndex == -1 || arrayCloseIndex == -1) return data;
 
         string notesContent = jsonText.Substring(arrayOpenIndex + 1, arrayCloseIndex - arrayOpenIndex - 1);
@@ -123,21 +120,12 @@ public class SongPlayer : MonoBehaviour
             string content = match.Groups[1].Value;
             List<int> beatLine = new List<int>();
             string[] numbers = content.Split(',');
-
             foreach (string numStr in numbers)
             {
-                if (int.TryParse(numStr.Trim(), out int note))
-                {
-                    beatLine.Add(note);
-                }
+                if (int.TryParse(numStr.Trim(), out int note)) beatLine.Add(note);
             }
-
-            if (beatLine.Count > 0)
-            {
-                data.notes.Add(beatLine);
-            }
+            if (beatLine.Count > 0) data.notes.Add(beatLine);
         }
-
         return data;
     }
 
@@ -176,85 +164,74 @@ public class SongPlayer : MonoBehaviour
         }
 
         List<int> currentBeat = song.notes[currentBeatIndex];
-        int spawnedCount = 0;
-
         for (int lane = 0; lane < currentBeat.Count && lane < 12; lane++)
         {
-            if (currentBeat[lane] == 1)
-            {
-                manager.SpawnNote(lane);
-                spawnedCount++;
-            }
+            if (currentBeat[lane] == 1) manager.SpawnNote(lane);
         }
-
         currentBeatIndex += 2;
     }
 
     void OnSongComplete()
     {
-        if (!isPlaying) return; // Zaten bittiyse tekrar girme
+        if (!isPlaying) return;
         isPlaying = false;
 
-        if (showDebugInfo)
-        {
-            Debug.Log("<color=green>═══ ŞARKI BİTTİ (Notalar Tükendi) ═══</color>");
-            manager.PrintStats();
-        }
+        if (showDebugInfo) Debug.Log("<color=green>ŞARKI BİTTİ</color>");
 
-        if (loopSong)
-        {
-            RestartSong();
-        }
-        else
-        {
-            // Şarkı tekrar etmeyecekse bekleme sürecini başlat
-            StartCoroutine(WaitAndStopGame());
-        }
+        if (loopSong) RestartSong();
+        else StartCoroutine(WaitAndStopGame());
     }
 
-    // --- YENİ EKLENEN KISIM: 5 SANİYE BEKLE VE DURDUR ---
     IEnumerator WaitAndStopGame()
     {
         if (showDebugInfo) Debug.Log($"Oyun {stopGameDelay} saniye sonra durdurulacak...");
 
-        // Belirtilen süre kadar bekle (Realtime değil oyun zamanı ile, çünkü oyun hala akıyor)
+        // 1. Bekle
         yield return new WaitForSeconds(stopGameDelay);
 
-        // Zamanı dondur
+        // 2. Bitiş Ekranını Aç (Panel)
+        if (gameEndUI != null)
+        {
+            gameEndUI.SetActive(true);
+        }
+        else
+        {
+            Debug.LogWarning("GameEndUI (Bitiş Paneli) atanmamış!");
+        }
+
+        // 3. Zamanı Dondur
         Time.timeScale = 0f;
         
-        if (showDebugInfo) Debug.Log("<color=red>■ OYUN DURDURULDU (Time.timeScale = 0) ■</color>");
-        
-        // Buraya istersen bir "Level Complete" UI paneli açma kodu da ekleyebilirsin.
-        // Orneğin: UIManager.Instance.ShowEndScreen();
+        if (showDebugInfo) Debug.Log("<color=red>■ OYUN DURDURULDU ■</color>");
     }
 
     public void StartSong()
     {
         if (!songLoaded) return;
         
-        // Eğer oyun daha önce durdurulduysa zamanı tekrar başlatmamız lazım
+        // UI'ı gizle ve zamanı başlat
+        if (gameEndUI != null) gameEndUI.SetActive(false);
         Time.timeScale = 1f; 
 
         startDelay = delayBeforeStart;
         isPlaying = false;
         timer = 0f;
         currentBeatIndex = 0;
-        if (showDebugInfo) Debug.Log($"Şarkı {delayBeforeStart} saniye içinde başlayacak...");
     }
 
     public void RestartSong()
     {
-        // Restart atılırsa zamanı tekrar normale döndür
         Time.timeScale = 1f;
-        StopAllCoroutines(); // Eğer durdurma sayacı çalışıyorsa iptal et
+        StopAllCoroutines();
+        
+        // UI'ı gizle
+        if (gameEndUI != null) gameEndUI.SetActive(false);
 
         timer = 0f;
         currentBeatIndex = 0;
         startDelay = delayBeforeStart;
         isPlaying = false;
         if (manager != null) manager.ResetGame();
-        if (showDebugInfo) Debug.Log("Şarkı yeniden başlatılıyor...");
     }
 
     public bool IsPlaying => isPlaying;

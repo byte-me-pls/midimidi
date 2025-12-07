@@ -14741,6 +14741,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: kevser_rigli
       objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: d1f2e846e1bc25049b36016b13b7974d, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: 8988224f80bc375479cd380d0c097f69, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []
@@ -18670,15 +18674,15 @@ PrefabInstance:
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 70103f67960e63f4c8352884edec3f94, type: 3}
       propertyPath: m_LocalPosition.x
-      value: 44.619064
+      value: 38.42
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 70103f67960e63f4c8352884edec3f94, type: 3}
       propertyPath: m_LocalPosition.y
-      value: 16.750519
+      value: 16.26
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 70103f67960e63f4c8352884edec3f94, type: 3}
       propertyPath: m_LocalPosition.z
-      value: 17.45583
+      value: 24.85
       objectReference: {fileID: 0}
     - target: {fileID: -8679921383154817045, guid: 70103f67960e63f4c8352884edec3f94, type: 3}
       propertyPath: m_LocalRotation.w
@@ -18716,6 +18720,10 @@ PrefabInstance:
       propertyPath: m_Name
       value: sum_rigli
       objectReference: {fileID: 0}
+    - target: {fileID: 5866666021909216657, guid: 70103f67960e63f4c8352884edec3f94, type: 3}
+      propertyPath: m_Controller
+      value: 
+      objectReference: {fileID: 9100000, guid: da3e27f55fe22c24291446b19e206465, type: 2}
     m_RemovedComponents: []
     m_RemovedGameObjects: []
     m_AddedGameObjects: []

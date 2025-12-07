@@ -35,7 +35,7 @@ public class AccuracyPenaltyManager : MonoBehaviour
 
         switch (penaltyIndex)
         {
-            case 1:
+            case 2:
                 if (ObjectPulseEffect.Instance != null)
                 {
                      ObjectPulseEffect.Instance.TriggerPulse(2);
@@ -45,14 +45,14 @@ public class AccuracyPenaltyManager : MonoBehaviour
                     Debug.LogWarning("PulseEffect yok (seviye 1).");
                 break;
 
-            case 2:
+            case 4:
                 if (ObjectPulseEffect.Instance != null)
                     ObjectPulseEffect.Instance.TriggerPulse(4);
                 else
                     Debug.LogWarning("PulseEffect yok (seviye 2).");
                 break;
 
-            case 3:
+            case 6:
                 if (ObjectPulseEffect.Instance != null)
                 { 
                     ObjectPulseEffect.Instance.Explode();
@@ -62,7 +62,7 @@ public class AccuracyPenaltyManager : MonoBehaviour
                     Debug.LogWarning("PulseEffect yok (seviye 3, patlama atlandı).");
                 break;
 
-            case 4:
+            case 8:
                 if (ambulance != null)
                     ambulance.SetActive(true);
                 Debug.Log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
