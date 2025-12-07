@@ -16,6 +16,9 @@ public class MidiGameManager : MonoBehaviour
     public float okWindow = 150f;
     public float missDistance = 200f;
 
+    [Header("Müzik Başlatma Alanı")]
+    public float musicStartDistance = 250f; // Nota bu alana girince müzik başlar
+
     [Header("UI Referansları")]
     public RectTransform hitBar;
     public RectTransform[] laneSpawnPoints;
@@ -44,6 +47,7 @@ public class MidiGameManager : MonoBehaviour
     private List<NoteUI>[] activeLanes;
     private Queue<NoteUI> notePool = new Queue<NoteUI>();
     private bool[] laneHeld; // BASILI TUŞ STATE'İ
+    private bool musicStartTriggered = false; // Müzik sadece bir kez, alan tetiklenince başlar
     
     // Lane index'inden gerçek MIDI numarasına mapping
     private Dictionary<int, int> indexToMidiNote = new Dictionary<int, int>();
@@ -107,6 +111,7 @@ public class MidiGameManager : MonoBehaviour
             audioController = FindObjectOfType<RhythmAudioController>();
 
         InitializePool();
+        musicStartTriggered = false;
     }
 
     void InitializePool()
@@ -175,6 +180,40 @@ public class MidiGameManager : MonoBehaviour
     {
         Vector3 posInHitBar = hitBar.InverseTransformPoint(noteRect.position);
         return posInHitBar.x - hitOffset;
+    }
+
+    /// <summary>
+    /// Yeni Müzik Başlatma Alanı: İlk herhangi bir nota bu alana girdiğinde müzik başlar.
+    /// Tuş vuruşuna bakmaz, sadece nota pozisyonuna göre tetikler.
+    /// </summary>
+    void Update()
+    {
+        if (musicStartTriggered || audioController == null || hitBar == null)
+            return;
+
+        // Bütün lane'lerdeki aktif notaları tara
+        for (int lane = 0; lane < activeLanes.Length; lane++)
+        {
+            var notes = activeLanes[lane];
+            if (notes == null || notes.Count == 0) continue;
+
+            foreach (var note in notes)
+            {
+                if (note == null) continue;
+
+                float signedDist = GetNoteSignedDistance(note.RectTransform);
+
+                // Hit bar merkezinden sağ tarafa doğru musicStartDistance kadar bir alan düşün.
+                // Nota bu sınırın içine girdiği anda (<=) müzik bir kez başlar.
+                if (signedDist <= musicStartDistance)
+                {
+                    audioController.StartMusic();
+                    musicStartTriggered = true;
+                    Debug.Log("🎵 Müzik, 'müzik başlatma alanı'nı ilk nota girdiği anda başlatıldı.");
+                    return;
+                }
+            }
+        }
     }
 
     /// <summary>
@@ -263,7 +302,7 @@ public class MidiGameManager : MonoBehaviour
             hitStats[HitResult.TooEarly]++;
             combo = 0;
 
-            // İster Miss olarak göster, ister ToEarly için ayrı UI yap
+            // İster Miss olarak göster, ister TooEarly için ayrı UI yap
             if (scoreDisplay != null)
                 scoreDisplay.ShowJudgement(HitResult.Miss);
 
@@ -286,9 +325,11 @@ public class MidiGameManager : MonoBehaviour
 
     public void RegisterHit(int lane, HitResult result, float distance)
     {
-        // Başarılı vuruşta ses toparlasın
+        // Müzik burada BAŞLATILMIYOR. Sadece ses davranışı.
         if (audioController != null)
+        {
             audioController.RegisterGoodHit();
+        }
 
         hitHistory.Add(result);
         hitStats[result]++;
@@ -364,6 +405,9 @@ public class MidiGameManager : MonoBehaviour
         // Lane held state reset
         for (int i = 0; i < laneHeld.Length; i++)
             laneHeld[i] = false;
+
+        // Müzik başlatma alanı tetik bilgisini de sıfırla
+        musicStartTriggered = false;
 
         // Ses reset
         if (audioController != null)

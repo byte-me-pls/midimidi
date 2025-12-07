@@ -3,7 +3,8 @@
 public class AccuracyPenaltyManager : MonoBehaviour
 {
     [Header("Referanslar")]
-    public CodeDrawnAccuracyBar accuracyBar; 
+    public CodeDrawnAccuracyBar accuracyBar;
+    public GameObject ambulance;
 
     private int lastRecordedIndex = 0;
 
@@ -31,25 +32,37 @@ public class AccuracyPenaltyManager : MonoBehaviour
     {
         Debug.Log($"Ceza Tetiklendi! Seviye: {penaltyIndex}");
 
-        if (ObjectPulseEffect.Instance == null) return;
-
-        // --- GÜNCELLENEN KISIM ---
         switch (penaltyIndex)
         {
             case 1:
-                ObjectPulseEffect.Instance.TriggerPulse(2); // 1. Seviye Büyüme
+                if (ObjectPulseEffect.Instance != null)
+                    ObjectPulseEffect.Instance.TriggerPulse(2);
+                else
+                    Debug.LogWarning("PulseEffect yok (seviye 1).");
                 break;
 
             case 2:
-                ObjectPulseEffect.Instance.TriggerPulse(4); // 2. Seviye Büyüme
+                if (ObjectPulseEffect.Instance != null)
+                    ObjectPulseEffect.Instance.TriggerPulse(4);
+                else
+                    Debug.LogWarning("PulseEffect yok (seviye 2).");
                 break;
 
             case 3:
-                ObjectPulseEffect.Instance.Explode(); // Patlama
+                if (ObjectPulseEffect.Instance != null)
+                    ObjectPulseEffect.Instance.Explode();
+                else
+                    Debug.LogWarning("PulseEffect yok (seviye 3, patlama atlandı).");
                 break;
-                
+
+            case 4:
+                if (ambulance != null)
+                    ambulance.SetActive(true);
+                Debug.Log("AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA");
+                break;
+
             default:
-                // 3'ten sonrası için bir şey yapma (zaten yok oldu)
+                // İstersen logla
                 break;
         }
     }

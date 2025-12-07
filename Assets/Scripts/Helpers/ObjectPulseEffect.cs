@@ -23,6 +23,9 @@ public class ObjectPulseEffect : MonoBehaviour
     [Header("Ragdoll Temizlik")]
     [Tooltip("Patlama sonrası ragdoll kaç saniye sonra yok olsun")]
     public float ragdollDestroyDelay = 5f;
+    
+    [Header("Audio Control")]
+    public RhythmAudioController audioController;
 
     [Header("Yavaş Çekim (Opsiyonel)")]
     public bool useSlowMotion = true;
@@ -43,6 +46,10 @@ public class ObjectPulseEffect : MonoBehaviour
         else Destroy(gameObject);
 
         baseScale = transform.localScale;
+        
+        // Audio controller'ı bul
+        if (audioController == null)
+            audioController = FindObjectOfType<RhythmAudioController>();
     }
 
     public void TriggerPulse(float intensityMultiplier = 1.0f)
@@ -103,6 +110,14 @@ public class ObjectPulseEffect : MonoBehaviour
         if (affectedRagdolls.Count == 0)
         {
             Debug.LogWarning("[Explosion] Hiçbir ragdoll bulunamadı! Layer mask ve karakter pozisyonlarını kontrol edin.");
+        }
+        else
+        {
+            // En az 1 ragdoll vuruldu → Elektro'yu kapat
+            if (audioController != null)
+            {
+                audioController.MuteElektroOnExplosion();
+            }
         }
 
         // 4) Yakındaki diğer fizik objelerine de kuvvet uygula
