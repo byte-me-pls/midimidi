@@ -1,5 +1,6 @@
 using UnityEngine;
 using System.Collections.Generic;
+using System.Text.RegularExpressions;
 
 public class MidiGameManager : MonoBehaviour
 {
@@ -43,6 +44,9 @@ public class MidiGameManager : MonoBehaviour
     private List<NoteUI>[] activeLanes;
     private Queue<NoteUI> notePool = new Queue<NoteUI>();
     private bool[] laneHeld; // BASILI TUŞ STATE'İ
+    
+    // Lane index'inden gerçek MIDI numarasına mapping
+    private Dictionary<int, int> indexToMidiNote = new Dictionary<int, int>();
 
     void Awake()
     {
@@ -57,7 +61,41 @@ public class MidiGameManager : MonoBehaviour
         foreach (HitResult result in System.Enum.GetValues(typeof(HitResult)))
             hitStats[result] = 0;
 
+        // Spawn point isimlerinden MIDI notalarını çıkar
+        ParseLaneNames();
+
         Debug.Log("MidiGameManager: Pooling Sistemi + LaneHeld aktif.");
+    }
+
+    void ParseLaneNames()
+    {
+        if (laneSpawnPoints == null || laneSpawnPoints.Length == 0)
+        {
+            Debug.LogWarning("Lane spawn points boş! MIDI nota mapping yapılamadı.");
+            return;
+        }
+
+        for (int i = 0; i < laneSpawnPoints.Length; i++)
+        {
+            if (laneSpawnPoints[i] == null) continue;
+
+            string laneName = laneSpawnPoints[i].name;
+            
+            // İsimden sayıyı çıkar (örn: "Lane_53" -> 53, "SpawnPoint53" -> 53)
+            Match match = Regex.Match(laneName, @"\d+");
+            
+            if (match.Success)
+            {
+                int midiNote = int.Parse(match.Value);
+                indexToMidiNote[i] = midiNote;
+                Debug.Log($"Lane {i} → MIDI Note {midiNote} ({laneName})");
+            }
+            else
+            {
+                Debug.LogWarning($"Lane {i} ({laneName}) - İsimden MIDI numarası çıkarılamadı!");
+                indexToMidiNote[i] = i; // Fallback: index'i kullan
+            }
+        }
     }
 
     void Start()
@@ -108,7 +146,9 @@ public class MidiGameManager : MonoBehaviour
         noteRect.localRotation = Quaternion.identity;
         noteRect.localScale = Vector3.one;
 
-        note.Initialize(this, lane, noteSpeed);
+        // Gerçek MIDI nota numarasını gönder
+        int midiNote = indexToMidiNote.ContainsKey(lane) ? indexToMidiNote[lane] : lane;
+        note.Initialize(this, midiNote, noteSpeed);
         activeLanes[lane].Add(note);
     }
 
@@ -116,8 +156,16 @@ public class MidiGameManager : MonoBehaviour
     {
         if (note == null) return;
 
-        if (note.LaneIndex >= 0 && note.LaneIndex < activeLanes.Length)
-            activeLanes[note.LaneIndex].Remove(note);
+        // NOT: LaneIndex artık MIDI numarası, activeLanes index'i değil
+        // Bu yüzden doğru lane'i bulmak için ters mapping gerekir
+        for (int i = 0; i < activeLanes.Length; i++)
+        {
+            if (activeLanes[i].Contains(note))
+            {
+                activeLanes[i].Remove(note);
+                break;
+            }
+        }
 
         note.gameObject.SetActive(false);
         notePool.Enqueue(note);
@@ -181,7 +229,7 @@ public class MidiGameManager : MonoBehaviour
                 scoreDisplay.ShowJudgement(HitResult.Miss);
 
             return;
-    }
+        }
 
         NoteUI closestNote = null;
         float closestAbsDistance = float.MaxValue;

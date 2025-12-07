@@ -10,8 +10,21 @@ public class CodeDrawnAccuracyBar : MonoBehaviour
     public int lowAccuracyIndex = 0; // Ceza Sayısı
     public float penaltyInterval = 3.0f; // Kaç saniyede bir ceza artsın?
     
+    [Header("Ardı Ardına Basış Mantığı")]
+    [Tooltip("Kaç doğru basış barı fullesin")]
+    public int successStreakToFull = 5;
+    
+    [Tooltip("Kaç yanlış basış barı %30'un altına düşürsün")]
+    public int errorStreakToCritical = 3;
+    
+    [Tooltip("Her doğru basışta bar ne kadar artmalı (0-1 arası)")]
+    public float successIncrement = 0.2f; // 5 basışta full olması için 1/5 = 0.2
+    
+    [Tooltip("Her yanlış basışta bar ne kadar azalmalı (0-1 arası)")]
+    public float errorDecrement = 0.233f; // 3 basışta %30'a düşmesi için (1-0.3)/3 = 0.233
+    
     private bool isBelowThreshold = false; 
-    private float penaltyTimer = 0f; // Süreyi tutacak sayaç
+    private float penaltyTimer = 0f;
 
     [Header("Konum Ayarları")]
     public float bottomOffset = 100f; 
@@ -28,70 +41,126 @@ public class CodeDrawnAccuracyBar : MonoBehaviour
     private float targetAccuracy = 1f;
     
     private Texture2D drawTexture;
+    
+    // Önceki hata sayısını tutarak yeni hataları tespit edeceğiz
+    private int previousPerfectCount = 0;
+    private int previousGoodCount = 0;
+    private int previousOkCount = 0;
+    private int previousMissCount = 0;
+    private int previousTooEarlyCount = 0;
+    
+    // İstatistikler
+    private int consecutiveSuccesses = 0;
+    private int consecutiveErrors = 0;
 
     void Start()
     {
         drawTexture = new Texture2D(1, 1);
         drawTexture.SetPixel(0, 0, Color.white);
         drawTexture.Apply();
+        
+        // Başlangıçta bar full
+        currentAccuracy = 1f;
+        targetAccuracy = 1f;
     }
 
     void Update()
     {
-        // 1. Accuracy Hesapla
         if (gameManager != null)
         {
             var stats = gameManager.GetHitStats();
-            int total = stats[HitResult.Perfect] + stats[HitResult.Good] + 
-                       stats[HitResult.Ok] + stats[HitResult.Miss];
             
-            if (total > 0)
+            // Yeni başarılı vuruş oldu mu?
+            int currentPerfect = stats[HitResult.Perfect];
+            int currentGood = stats[HitResult.Good];
+            int currentOk = stats[HitResult.Ok];
+            
+            int newSuccesses = (currentPerfect - previousPerfectCount) + 
+                              (currentGood - previousGoodCount) + 
+                              (currentOk - previousOkCount);
+            
+            // Yeni hata oldu mu?
+            int currentMiss = stats[HitResult.Miss];
+            int currentTooEarly = stats[HitResult.TooEarly];
+            
+            int newErrors = (currentMiss - previousMissCount) + 
+                           (currentTooEarly - previousTooEarlyCount);
+            
+            // BAŞARILI BASIŞLAR
+            if (newSuccesses > 0)
             {
-                int successful = stats[HitResult.Perfect] + stats[HitResult.Good] + stats[HitResult.Ok];
-                targetAccuracy = (float)successful / total;
+                consecutiveSuccesses += newSuccesses;
+                consecutiveErrors = 0; // Hata streak'i kır
+                
+                // Bar'ı artır
+                targetAccuracy = Mathf.Min(1f, targetAccuracy + (successIncrement * newSuccesses));
+                
+                Debug.Log($"✅ Doğru Basış! +{newSuccesses} | Streak: {consecutiveSuccesses} | Bar: {(targetAccuracy * 100):F1}%");
+                
+                // 5 ardı ardına doğru basışta full bar
+                if (consecutiveSuccesses >= successStreakToFull)
+                {
+                    targetAccuracy = 1f;
+                    Debug.Log($"🌟 {successStreakToFull} ARDIARDINA DOĞRU! BAR FULL!");
+                }
             }
-        }
-        else
-        {
-            targetAccuracy = 1f;
+            
+            // HATALI BASIŞLAR
+            if (newErrors > 0)
+            {
+                consecutiveErrors += newErrors;
+                consecutiveSuccesses = 0; // Başarı streak'i kır
+                
+                // Bar'ı azalt
+                targetAccuracy = Mathf.Max(0f, targetAccuracy - (errorDecrement * newErrors));
+                
+                Debug.Log($"❌ Yanlış Basış! +{newErrors} | Streak: {consecutiveErrors} | Bar: {(targetAccuracy * 100):F1}%");
+                
+                // 3 ardı ardına hata → kritik seviye
+                if (consecutiveErrors >= errorStreakToCritical)
+                {
+                    targetAccuracy = Mathf.Min(targetAccuracy, 0.29f); // %30'un altına düşür
+                    Debug.Log($"💀 {errorStreakToCritical} ARDIARDINA HATA! KRİTİK SEVİYE!");
+                }
+            }
+            
+            // Önceki sayıları güncelle
+            previousPerfectCount = currentPerfect;
+            previousGoodCount = currentGood;
+            previousOkCount = currentOk;
+            previousMissCount = currentMiss;
+            previousTooEarlyCount = currentTooEarly;
         }
 
-        // --- GÜNCELLENMİŞ MANTIK (ZAMANLAYICI DAHİL) ---
-        
-        // Eğer Accuracy %30'un altındaysa
+        // Kritik Seviye Kontrolü (Zamanlayıcı ile)
         if (targetAccuracy < 0.3f)
         {
-            // A. İLK GİRİŞ ANI
             if (!isBelowThreshold)
             {
-                lowAccuracyIndex++; // İlk cezayı kes
+                lowAccuracyIndex++;
                 isBelowThreshold = true;
-                penaltyTimer = 0f; // Sayacı sıfırla
-                Debug.Log($"KRİTİK SEVİYE! İlk Ceza. Index: {lowAccuracyIndex}");
+                penaltyTimer = 0f;
+                Debug.Log($"🔴 KRİTİK SEVİYE! İlk Ceza. Index: {lowAccuracyIndex}");
             }
-            // B. ZATEN AŞAĞIDA VE BEKLİYORSA
             else
             {
-                // Sayacı çalıştır
                 penaltyTimer += Time.deltaTime;
 
-                // 3 saniye doldu mu?
                 if (penaltyTimer >= penaltyInterval)
                 {
-                    lowAccuracyIndex++; // Ekstra ceza kes
-                    penaltyTimer = 0f; // Sayacı sıfırla (tekrar 3 sn sayması için)
-                    Debug.Log($"KRİTİK SÜRE DOLDU! Ekstra Ceza. Index: {lowAccuracyIndex}");
+                    lowAccuracyIndex++;
+                    penaltyTimer = 0f;
+                    Debug.Log($"🔴 KRİTİK SÜRE DOLDU! Ekstra Ceza. Index: {lowAccuracyIndex}");
                 }
             }
         }
         else
         {
-            // Accuracy düzelirse her şeyi sıfırla
             isBelowThreshold = false;
             penaltyTimer = 0f;
         }
-        // -----------------------------------------------
 
+        // Smooth Geçiş
         currentAccuracy = Mathf.Lerp(currentAccuracy, targetAccuracy, Time.deltaTime * 5f);
     }
 
@@ -102,9 +171,11 @@ public class CodeDrawnAccuracyBar : MonoBehaviour
         float posX = (Screen.width - width) / 2f;
         float posY = Screen.height - bottomOffset; 
 
+        // Arka plan
         GUI.color = backgroundColor;
         GUI.DrawTexture(new Rect(posX, posY, width, height), drawTexture);
 
+        // Bar rengi
         Color barColor;
         if (currentAccuracy > 0.5f)
             barColor = Color.Lerp(midColor, fullColor, (currentAccuracy - 0.5f) * 2f);
@@ -115,6 +186,9 @@ public class CodeDrawnAccuracyBar : MonoBehaviour
         float currentWidth = width * currentAccuracy;
         GUI.DrawTexture(new Rect(posX, posY, currentWidth, height), drawTexture);
 
+        // Debug bilgisi
         GUI.color = Color.white;
+        string debugText = $"Bar: {(currentAccuracy * 100f):F1}% | ✅ Streak: {consecutiveSuccesses} | ❌ Streak: {consecutiveErrors} | Penalty: {lowAccuracyIndex}";
+        GUI.Label(new Rect(posX, posY - 25f, width, 20f), debugText);
     }
 }

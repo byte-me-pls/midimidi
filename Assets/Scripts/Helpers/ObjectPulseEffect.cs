@@ -1,4 +1,5 @@
 using UnityEngine;
+using System.Collections;
 using System.Collections.Generic;
 
 public class ObjectPulseEffect : MonoBehaviour
@@ -18,6 +19,10 @@ public class ObjectPulseEffect : MonoBehaviour
     public float explosionForce = 2500f;
     public float explosionUpwardModifier = 2f;
     public LayerMask charactersLayer;
+
+    [Header("Ragdoll Temizlik")]
+    [Tooltip("Patlama sonrası ragdoll kaç saniye sonra yok olsun")]
+    public float ragdollDestroyDelay = 5f;
 
     [Header("Yavaş Çekim (Opsiyonel)")]
     public bool useSlowMotion = true;
@@ -55,13 +60,12 @@ public class ObjectPulseEffect : MonoBehaviour
 
         if (explosionSound != null)
             AudioSource.PlayClipAtPoint(explosionSound, transform.position, 1.0f);
-        
 
-        // 3) Kamera shake
+        // 2) Kamera shake
         if (useCameraShake)
             StartCoroutine(CameraShakeEffect());
 
-        // 4) Patlama alanındaki collider'ları bul
+        // 3) Patlama alanındaki collider'ları bul
         Collider[] colliders = Physics.OverlapSphere(
             transform.position,
             explosionRadius,
@@ -90,6 +94,9 @@ public class ObjectPulseEffect : MonoBehaviour
                     explosionRadius,
                     explosionUpwardModifier
                 );
+
+                // 5 saniye sonra ragdoll'u yok et
+                StartCoroutine(DestroyRagdollAfterDelay(ragdoll.gameObject, ragdollDestroyDelay));
             }
         }
 
@@ -98,7 +105,7 @@ public class ObjectPulseEffect : MonoBehaviour
             Debug.LogWarning("[Explosion] Hiçbir ragdoll bulunamadı! Layer mask ve karakter pozisyonlarını kontrol edin.");
         }
 
-        // 5) Yakındaki diğer fizik objelerine de kuvvet uygula
+        // 4) Yakındaki diğer fizik objelerine de kuvvet uygula
         Rigidbody[] nearbyRigidbodies = FindObjectsOfType<Rigidbody>();
         foreach (var rb in nearbyRigidbodies)
         {
@@ -117,12 +124,29 @@ public class ObjectPulseEffect : MonoBehaviour
             }
         }
 
-        // 6) Kendini yok et veya kapat
+        // 5) Kendini yok et veya kapat
         Destroy(gameObject, 0.1f);
     }
-    
 
-    System.Collections.IEnumerator CameraShakeEffect()
+    /// <summary>
+    /// Ragdoll objesini belirtilen süre sonra yok eder
+    /// </summary>
+    IEnumerator DestroyRagdollAfterDelay(GameObject ragdollObject, float delay)
+    {
+        if (ragdollObject == null) yield break;
+
+        Debug.Log($"[Ragdoll] {ragdollObject.name} {delay} saniye sonra yok edilecek.");
+        
+        yield return new WaitForSeconds(delay);
+
+        if (ragdollObject != null)
+        {
+            Debug.Log($"[Ragdoll] {ragdollObject.name} yok ediliyor.");
+            Destroy(ragdollObject);
+        }
+    }
+
+    IEnumerator CameraShakeEffect()
     {
         Camera mainCam = Camera.main;
         if (mainCam == null) yield break;
@@ -156,7 +180,6 @@ public class ObjectPulseEffect : MonoBehaviour
             transform.localScale = baseScale;
             currentIntensity = 0f;
         }
-        
     }
 
     void OnDrawGizmosSelected()
