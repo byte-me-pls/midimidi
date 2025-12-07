@@ -10,9 +10,16 @@ public class ObjectPulseEffect : MonoBehaviour
     public float scaleMultiplier = 1.2f;
     public float fadeSpeed = 10f;
 
-    [Header("Patlama Ayarları")]
+    [Header("Patlama Görseli")]
     public GameObject explosionVFXPrefab;
+    
+    [Header("Ses Ayarları (Rhythm Yerine)")]
+    [Tooltip("Genel patlama sesi")]
     public AudioClip explosionSound;
+    [Tooltip("Ragdoll vurulunca çıkacak özel ses (Opsiyonel)")]
+    public AudioClip ragdollHitSound;
+    [Tooltip("Sesi çalacak Kaynak (MainCamera veya boş bir obje verin, çünkü bu obje yok oluyor!)")]
+    public AudioSource targetAudioSource; 
 
     [Header("Patlama Fiziği")]
     public float explosionRadius = 5f;
@@ -21,20 +28,11 @@ public class ObjectPulseEffect : MonoBehaviour
     public LayerMask charactersLayer;
 
     [Header("Ragdoll Temizlik")]
-    [Tooltip("Patlama sonrası ragdoll kaç saniye sonra yok olsun")]
     public float ragdollDestroyDelay = 5f;
-    
-    [Header("Audio Control")]
-    public RhythmAudioController audioController;
 
-    [Header("Yavaş Çekim (Opsiyonel)")]
-    public bool useSlowMotion = true;
-    public float slowMotionScale = 0.3f;
-    public float slowMotionDuration = 0.5f;
-
-    [Header("Kamera Shake (Opsiyonel)")]
+    [Header("Kamera Shake")]
     public bool useCameraShake = true;
-    public float shakeIntensity = 0.5f;
+    public float shakeIntensity = 0.8f;
     public float shakeDuration = 0.3f;
 
     private Vector3 baseScale;
@@ -47,9 +45,11 @@ public class ObjectPulseEffect : MonoBehaviour
 
         baseScale = transform.localScale;
         
-        // Audio controller'ı bul
-        if (audioController == null)
-            audioController = FindObjectOfType<RhythmAudioController>();
+        // Eğer AudioSource atanmadıysa otomatik MainCamera'dakini bulmaya çalış
+        if (targetAudioSource == null && Camera.main != null)
+        {
+            targetAudioSource = Camera.main.GetComponent<AudioSource>();
+        }
     }
 
     public void TriggerPulse(float intensityMultiplier = 1.0f)
@@ -61,131 +61,121 @@ public class ObjectPulseEffect : MonoBehaviour
     {
         Debug.Log($"[Explosion] Patlama başladı. Pozisyon: {transform.position}");
 
-        // 1) VFX ve Ses
+        // 1) VFX
         if (explosionVFXPrefab != null)
             Instantiate(explosionVFXPrefab, transform.position, Quaternion.identity);
 
+        // 2) SES (RhythmController yerine direkt ses)
+        // Genel patlama sesi (Objeden bağımsız çalar)
         if (explosionSound != null)
+        {
             AudioSource.PlayClipAtPoint(explosionSound, transform.position, 1.0f);
+        }
 
-        // 2) Kamera shake
+        // 3) Kamera shake (Düzeltilmiş versiyon)
         if (useCameraShake)
+        {
+            StopCoroutine("CameraShakeEffect");
             StartCoroutine(CameraShakeEffect());
+        }
 
-        // 3) Patlama alanındaki collider'ları bul
-        Collider[] colliders = Physics.OverlapSphere(
-            transform.position,
-            explosionRadius,
-            charactersLayer
-        );
-
-        Debug.Log($"[Explosion] {colliders.Length} collider yakalandı.");
-
-        // Aynı RagdollManager'a 50 kez gitmemek için
+        // 4) Ragdoll Etkileşimi
+        Collider[] colliders = Physics.OverlapSphere(transform.position, explosionRadius, charactersLayer);
         HashSet<RagdollManager> affectedRagdolls = new HashSet<RagdollManager>();
 
         foreach (Collider nearbyObject in colliders)
         {
-            // Karakterin root'unda veya herhangi bir child'ında RagdollManager ara
             RagdollManager ragdoll = nearbyObject.GetComponentInParent<RagdollManager>();
 
             if (ragdoll != null && !affectedRagdolls.Contains(ragdoll))
             {
                 affectedRagdolls.Add(ragdoll);
-                Debug.Log($"[Explosion] Ragdoll vuruldu: {ragdoll.name}");
-
-                // Patlama kuvvetini uygula
+                
                 ragdoll.ApplyExplosionForceToRagdoll(
-                    explosionForce,
-                    transform.position,
-                    explosionRadius,
+                    explosionForce, 
+                    transform.position, 
+                    explosionRadius, 
                     explosionUpwardModifier
                 );
 
-                // 5 saniye sonra ragdoll'u yok et
                 StartCoroutine(DestroyRagdollAfterDelay(ragdoll.gameObject, ragdollDestroyDelay));
             }
         }
 
-        if (affectedRagdolls.Count == 0)
+        // --- DEĞİŞİKLİK BURADA ---
+        // Eğer ragdoll'lara vurduysak Rhythm yerine direkt ses çalıyoruz
+        if (affectedRagdolls.Count > 0)
         {
-            Debug.LogWarning("[Explosion] Hiçbir ragdoll bulunamadı! Layer mask ve karakter pozisyonlarını kontrol edin.");
+            Debug.Log("[Explosion] Ragdoll'lar etkilendi, vuruş sesi çalınıyor.");
+            
+            if (targetAudioSource != null && ragdollHitSound != null)
+            {
+                targetAudioSource.PlayOneShot(ragdollHitSound);
+            }
         }
         else
         {
-            // En az 1 ragdoll vuruldu → Elektro'yu kapat
-            if (audioController != null)
-            {
-                audioController.MuteElektroOnExplosion();
-            }
+            Debug.LogWarning("[Explosion] Hiçbir ragdoll bulunamadı!");
         }
 
-        // 4) Yakındaki diğer fizik objelerine de kuvvet uygula
-        Rigidbody[] nearbyRigidbodies = FindObjectsOfType<Rigidbody>();
+        // 5) Çevre Fiziği
+        Rigidbody[] nearbyRigidbodies = Object.FindObjectsByType<Rigidbody>(FindObjectsSortMode.None);
         foreach (var rb in nearbyRigidbodies)
         {
             if (rb == null) continue;
-            
+            if (rb.GetComponentInParent<RagdollManager>() != null) continue;
+
             float distance = Vector3.Distance(rb.position, transform.position);
             if (distance <= explosionRadius)
             {
                 rb.AddExplosionForce(
-                    explosionForce,
-                    transform.position,
-                    explosionRadius,
-                    explosionUpwardModifier,
+                    explosionForce, 
+                    transform.position, 
+                    explosionRadius, 
+                    explosionUpwardModifier, 
                     ForceMode.Impulse
                 );
             }
         }
 
-        // 5) Kendini yok et veya kapat
-        Destroy(gameObject, 0.1f);
+        // Objenin kendini yok etmesi (Seslerin kesilmemesi için PlayClipAtPoint veya harici source kullandık)
+        Destroy(gameObject, 0.2f);
     }
 
-    /// <summary>
-    /// Ragdoll objesini belirtilen süre sonra yok eder
-    /// </summary>
-    IEnumerator DestroyRagdollAfterDelay(GameObject ragdollObject, float delay)
-    {
-        if (ragdollObject == null) yield break;
-
-        Debug.Log($"[Ragdoll] {ragdollObject.name} {delay} saniye sonra yok edilecek.");
-        
-        yield return new WaitForSeconds(delay);
-
-        if (ragdollObject != null)
-        {
-            Debug.Log($"[Ragdoll] {ragdollObject.name} yok ediliyor.");
-            Destroy(ragdollObject);
-        }
-    }
-
+    // --- KAMERA TİTREME (Düzeltilmiş - Additive Shake) ---
     IEnumerator CameraShakeEffect()
     {
         Camera mainCam = Camera.main;
         if (mainCam == null) yield break;
 
-        Vector3 originalPos = mainCam.transform.localPosition;
         float elapsed = 0f;
-
         while (elapsed < shakeDuration)
         {
-            float x = Random.Range(-1f, 1f) * shakeIntensity;
-            float y = Random.Range(-1f, 1f) * shakeIntensity;
+            // Rastgele ofset üret
+            Vector3 shakeOffset = Random.insideUnitSphere * shakeIntensity;
+            
+            // Kameraya uygula
+            mainCam.transform.position += shakeOffset;
+            
+            yield return null; 
 
-            mainCam.transform.localPosition = originalPos + new Vector3(x, y, 0);
+            // Bir sonraki karede geri al (böylece kamera takibi bozulmaz)
+            if (mainCam != null)
+                mainCam.transform.position -= shakeOffset;
 
-            elapsed += Time.unscaledDeltaTime;
-            yield return null;
+            elapsed += Time.deltaTime;
         }
+    }
 
-        mainCam.transform.localPosition = originalPos;
+    IEnumerator DestroyRagdollAfterDelay(GameObject ragdollObject, float delay)
+    {
+        if (ragdollObject == null) yield break;
+        yield return new WaitForSeconds(delay);
+        if (ragdollObject != null) Destroy(ragdollObject);
     }
 
     void Update()
     {
-        // Eski scale efekti
         currentIntensity = Mathf.Lerp(currentIntensity, 0f, Time.deltaTime * fadeSpeed);
         float s = 1f + (currentIntensity * (scaleMultiplier - 1f));
         transform.localScale = baseScale * s;
@@ -199,16 +189,7 @@ public class ObjectPulseEffect : MonoBehaviour
 
     void OnDrawGizmosSelected()
     {
-        // Patlama yarıçapını göster
         Gizmos.color = Color.red;
         Gizmos.DrawWireSphere(transform.position, explosionRadius);
-
-        // Etkilenecek karakterleri göster
-        Gizmos.color = Color.yellow;
-        Collider[] cols = Physics.OverlapSphere(transform.position, explosionRadius, charactersLayer);
-        foreach (var col in cols)
-        {
-            Gizmos.DrawLine(transform.position, col.transform.position);
-        }
     }
 }

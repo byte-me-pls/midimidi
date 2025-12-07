@@ -5,113 +5,95 @@ public class RagdollManager : MonoBehaviour
     [Header("Referanslar")]
     public Animator animator;
 
-    [Header("Root Bileşenleri")]
-    public Rigidbody rootRigidbody;
-    public Collider rootCollider;
+    [Header("Ragdoll Ayarları")]
+    public float ragdollMass = 80f;
+    public float ragdollDrag = 0.5f;
+    public float ragdollAngularDrag = 0.5f;
 
-    private Rigidbody[] ragdollRigidbodies;
-    private Collider[] ragdollColliders;
+    [Header("Collision Ayarları")]
+    public float minCollisionMass = 0.1f;
+    public PhysicsMaterial ragdollPhysicsMaterial;
 
     [Header("Durum")]
     public bool isRagdollActive = false;
 
-    [Header("Ragdoll Ayarları")]
-    public float ragdollMass = 80f; // Toplam kütle
-    public float ragdollDrag = 2f;  // Hava direnci (yavaşlatır)
-    public float ragdollAngularDrag = 2f;  // Dönme direnci
-    public float jointSpring = 0f;
-    public float jointDamper = 0f;
+    private Rigidbody[] ragdollRigidbodies;
+    private Collider[] ragdollColliders;
+    private MonoBehaviour[] allBehaviours;
 
     void Awake()
     {
-        if (animator == null) animator = GetComponent<Animator>();
-        if (rootRigidbody == null) rootRigidbody = GetComponent<Rigidbody>();
-        if (rootCollider == null) rootCollider = GetComponent<Collider>();
+        if (animator == null)
+            animator = GetComponent<Animator>();
 
         ragdollRigidbodies = GetComponentsInChildren<Rigidbody>();
-        ragdollColliders = GetComponentsInChildren<Collider>();
+        ragdollColliders   = GetComponentsInChildren<Collider>();
+        allBehaviours      = GetComponentsInChildren<MonoBehaviour>(true);
 
         DeactivateRagdoll();
     }
 
     public void ActivateRagdoll()
     {
+        if (isRagdollActive) return;
         isRagdollActive = true;
 
-        // Animasyonu kapat
+        // Animator, RigBuilder, IK vs. ne varsa sustur (seni göğüsten zımbalayanlar bunlar)
+        DisableOtherBehaviours();
+
         if (animator != null)
             animator.enabled = false;
 
-        // Root collider'ı kapat ki ragdoll'la çakışmasın
-        if (rootCollider != null)
-            rootCollider.enabled = false;
-
-        // Root rigidbody'yi kinematic yap (hareket etmesin)
-        if (rootRigidbody != null)
-        {
-            rootRigidbody.isKinematic = true;
-            rootRigidbody.useGravity = false;
-        }
-
-        // Kütleyi dağıt
+        // Kütle dağılımı
         int boneCount = 0;
         foreach (var rb in ragdollRigidbodies)
         {
-            if (rb != null && rb.gameObject != this.gameObject)
-                boneCount++;
+            if (rb != null) boneCount++;
         }
 
         float massPerBone = boneCount > 0 ? ragdollMass / boneCount : 1f;
+        massPerBone = Mathf.Max(massPerBone, minCollisionMass);
 
-        // Kemiklerde fiziği aç
         foreach (var rb in ragdollRigidbodies)
         {
             if (rb == null) continue;
-            if (rb.gameObject == this.gameObject) continue; // root'u atla
 
             rb.isKinematic = false;
-            rb.useGravity = true;
-            rb.mass = massPerBone;
-            rb.linearDamping = ragdollDrag;  // Hava direnci ekle
-            rb.angularDamping = ragdollAngularDrag;  // Dönme direnci ekle
-            
-            // Interpolation ekle (daha smooth hareket)
-            rb.interpolation = RigidbodyInterpolation.Interpolate;
+            rb.useGravity  = true;
+            rb.mass        = massPerBone;
+
+            rb.linearDamping  = ragdollDrag;
+            rb.angularDamping = ragdollAngularDrag;
+
+            rb.interpolation          = RigidbodyInterpolation.Interpolate;
+            rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+            rb.constraints            = RigidbodyConstraints.None;
+            rb.maxAngularVelocity     = 50f;
         }
 
         foreach (var col in ragdollColliders)
         {
             if (col == null) continue;
-            if (col.gameObject == this.gameObject) continue;
 
+            col.enabled   = true;
             col.isTrigger = false;
-            col.enabled = true;
+
+            if (ragdollPhysicsMaterial != null && col is CapsuleCollider)
+                col.material = ragdollPhysicsMaterial;
         }
 
-        // Character Joint ayarları (eğer varsa)
-        CharacterJoint[] joints = GetComponentsInChildren<CharacterJoint>();
-        foreach (var joint in joints)
+        ConfigureJoints();
+    }
+
+    private void DisableOtherBehaviours()
+    {
+        foreach (var mb in allBehaviours)
         {
-            if (joint != null)
-            {
-                joint.enableProjection = true;
-                
-                SoftJointLimit limit = joint.lowTwistLimit;
-                limit.bounciness = 0f;
-                joint.lowTwistLimit = limit;
-                
-                limit = joint.highTwistLimit;
-                limit.bounciness = 0f;
-                joint.highTwistLimit = limit;
-                
-                limit = joint.swing1Limit;
-                limit.bounciness = 0f;
-                joint.swing1Limit = limit;
-                
-                limit = joint.swing2Limit;
-                limit.bounciness = 0f;
-                joint.swing2Limit = limit;
-            }
+            if (mb == null) continue;
+            if (mb == this) continue;          // RagdollManager açık kalsın
+            if (!mb.enabled) continue;        // Zaten kapalıysa dokunma
+
+            mb.enabled = false;
         }
     }
 
@@ -122,65 +104,99 @@ public class RagdollManager : MonoBehaviour
         foreach (var rb in ragdollRigidbodies)
         {
             if (rb == null) continue;
-            if (rb.gameObject == this.gameObject) continue;
 
-            rb.isKinematic = true;
-            rb.linearVelocity = Vector3.zero;
+            rb.isKinematic     = true;
+            rb.linearVelocity  = Vector3.zero;
             rb.angularVelocity = Vector3.zero;
         }
 
         foreach (var col in ragdollColliders)
         {
             if (col == null) continue;
-            if (col.gameObject == this.gameObject) continue;
-
             col.isTrigger = true;
-        }
-
-        if (rootCollider != null)
-        {
-            rootCollider.enabled = true;
-            rootCollider.isTrigger = false;
-        }
-
-        if (rootRigidbody != null)
-        {
-            rootRigidbody.isKinematic = false;
-            rootRigidbody.useGravity = true;
         }
 
         if (animator != null)
             animator.enabled = true;
     }
 
-    /// <summary>
-    /// Patlama kuvvetini tüm ragdoll kemiklerine uygular.
-    /// </summary>
+    private void ConfigureJoints()
+    {
+        CharacterJoint[] joints = GetComponentsInChildren<CharacterJoint>();
+
+        foreach (var joint in joints)
+        {
+            if (joint == null) continue;
+
+            joint.enableProjection  = true;
+            joint.projectionDistance = 0.1f;
+            joint.projectionAngle    = 180f;
+
+            joint.breakForce  = Mathf.Infinity;
+            joint.breakTorque = Mathf.Infinity;
+
+            SoftJointLimitSpring spring = new SoftJointLimitSpring
+            {
+                spring = 0f,
+                damper = 0f
+            };
+
+            joint.twistLimitSpring = spring;
+            joint.swingLimitSpring = spring;
+
+            SoftJointLimit limit;
+
+            limit = joint.lowTwistLimit;
+            limit.bounciness      = 0f;
+            limit.contactDistance  = 0f;
+            joint.lowTwistLimit   = limit;
+
+            limit = joint.highTwistLimit;
+            limit.bounciness      = 0f;
+            limit.contactDistance  = 0f;
+            joint.highTwistLimit  = limit;
+
+            limit = joint.swing1Limit;
+            limit.bounciness      = 0f;
+            limit.contactDistance  = 0f;
+            joint.swing1Limit     = limit;
+
+            limit = joint.swing2Limit;
+            limit.bounciness      = 0f;
+            limit.contactDistance  = 0f;
+            joint.swing2Limit     = limit;
+
+            joint.enablePreprocessing = true;
+        }
+    }
+
     public void ApplyExplosionForceToRagdoll(
         float force,
         Vector3 position,
         float radius,
         float upwardModifier = 2f)
     {
-        // İlk önce ragdoll moduna geç
         if (!isRagdollActive)
             ActivateRagdoll();
 
-        // Patlamayı biraz aşağıdan kabul edelim ki yukarı doğru uçursun
-        Vector3 explosionPos = position - Vector3.up * 0.5f;
+        // Patlama merkezini biraz aşağıdan uygula
+        Vector3 explosionPos = position - Vector3.up * 0.3f;
+
+        // En uzaktaki kemik bile minimum güç alsın
+        const float minForceFactor = 0.25f; // %25 minimum
 
         foreach (var rb in ragdollRigidbodies)
         {
             if (rb == null) continue;
-            if (rb.gameObject == this.gameObject) continue; // root
 
-            // Mesafe hesapla
             float distance = Vector3.Distance(rb.position, position);
             if (distance > radius) continue;
 
-            // Mesafeye göre güç azalt
             float normalizedDistance = 1f - (distance / radius);
-            float adjustedForce = force * normalizedDistance;
+            normalizedDistance = Mathf.Clamp01(normalizedDistance);
+
+            float forceFactor  = Mathf.Lerp(minForceFactor, 1f, normalizedDistance);
+            float adjustedForce = force * forceFactor;
 
             rb.AddExplosionForce(
                 adjustedForce,
@@ -190,11 +206,32 @@ public class RagdollManager : MonoBehaviour
                 ForceMode.Impulse
             );
         }
+
+        // Gövdeye ekstra ufak tekme (daha hissedilir reaksiyon için)
+        Rigidbody hips = FindHipsRigidbody();
+        if (hips != null)
+        {
+            hips.AddExplosionForce(
+                force * 0.3f,
+                explosionPos,
+                radius,
+                upwardModifier,
+                ForceMode.Impulse
+            );
+        }
     }
 
-    /// <summary>
-    /// Belirli bir yöne doğru güç uygular
-    /// </summary>
+    private Rigidbody FindHipsRigidbody()
+    {
+        foreach (var rb in ragdollRigidbodies)
+        {
+            if (rb == null) continue;
+            if (rb.name.Contains("Hips") || rb.name.Contains("Pelvis"))
+                return rb;
+        }
+        return null;
+    }
+
     public void ApplyForceToRagdoll(Vector3 force, ForceMode mode = ForceMode.Impulse)
     {
         if (!isRagdollActive)
@@ -203,8 +240,6 @@ public class RagdollManager : MonoBehaviour
         foreach (var rb in ragdollRigidbodies)
         {
             if (rb == null) continue;
-            if (rb.gameObject == this.gameObject) continue;
-
             rb.AddForce(force, mode);
         }
     }
@@ -213,15 +248,13 @@ public class RagdollManager : MonoBehaviour
     {
         if (!isRagdollActive) return;
 
-        // Aktif ragdoll kemiklerini göster
         Rigidbody[] rbs = GetComponentsInChildren<Rigidbody>();
         Gizmos.color = Color.green;
+
         foreach (var rb in rbs)
         {
-            if (rb != null && rb.gameObject != gameObject && !rb.isKinematic)
-            {
+            if (rb != null && !rb.isKinematic)
                 Gizmos.DrawWireSphere(rb.position, 0.05f);
-            }
         }
     }
 }

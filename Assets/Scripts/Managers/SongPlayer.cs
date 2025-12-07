@@ -1,5 +1,6 @@
 ﻿using UnityEngine;
 using System.Collections.Generic;
+using System.Collections; // Coroutine için gerekli
 using System;
 using System.Text.RegularExpressions;
 
@@ -20,6 +21,10 @@ public class SongPlayer : MonoBehaviour
     public bool autoPlayOnStart = true;
     public float delayBeforeStart = 2f;
     public bool loopSong = false;
+
+    [Header("Bitiş Ayarları")]
+    [Tooltip("Şarkı bittikten kaç saniye sonra oyun donsun?")]
+    public float stopGameDelay = 5f; // İsteğine göre 5 saniye varsayılan
 
     [Header("Debug")]
     public bool showDebugInfo = true;
@@ -72,9 +77,7 @@ public class SongPlayer : MonoBehaviour
                 song.bpm = 120;
             }
 
-            // --- DEĞİŞİKLİK 1: SÜREYİ 2 KATINA ÇIKARIYORUZ ---
-            // Notaları 2'şer atlayacağımız için bekleme süresini de 2 ile çarpıyoruz.
-            // Yoksa şarkı 2 kat hızlı çalar.
+            // 2x Step Modu (Notaları 2'şer atladığımız için süreyi çarpıyoruz)
             beatInterval = (60f / song.bpm) * 2; 
             
             timer = 0f;
@@ -86,7 +89,6 @@ public class SongPlayer : MonoBehaviour
                 Debug.Log($"<color=green>═══ ŞARKI YÜKLENDİ (2x STEP MODU) ═══</color>");
                 Debug.Log($"BPM: {song.bpm}");
                 Debug.Log($"Beat Sayısı: {song.notes.Count}");
-                // Toplam süreyi de doğru göstermek için 2'ye bölmüyoruz (array boyutu aynı ama atlıyoruz)
                 Debug.Log($"Tahmini Süre: ~{((song.notes.Count / 2) * beatInterval):F1} saniye");
             }
         }
@@ -185,27 +187,55 @@ public class SongPlayer : MonoBehaviour
             }
         }
 
-        // --- DEĞİŞİKLİK 2: İNDEXİ 2 ARTIRIYORUZ ---
         currentBeatIndex += 2;
     }
 
     void OnSongComplete()
     {
-        if (!isPlaying) return;
+        if (!isPlaying) return; // Zaten bittiyse tekrar girme
         isPlaying = false;
 
         if (showDebugInfo)
         {
-            Debug.Log("<color=green>═══ ŞARKI BİTTİ ═══</color>");
+            Debug.Log("<color=green>═══ ŞARKI BİTTİ (Notalar Tükendi) ═══</color>");
             manager.PrintStats();
         }
 
-        if (loopSong) RestartSong();
+        if (loopSong)
+        {
+            RestartSong();
+        }
+        else
+        {
+            // Şarkı tekrar etmeyecekse bekleme sürecini başlat
+            StartCoroutine(WaitAndStopGame());
+        }
+    }
+
+    // --- YENİ EKLENEN KISIM: 5 SANİYE BEKLE VE DURDUR ---
+    IEnumerator WaitAndStopGame()
+    {
+        if (showDebugInfo) Debug.Log($"Oyun {stopGameDelay} saniye sonra durdurulacak...");
+
+        // Belirtilen süre kadar bekle (Realtime değil oyun zamanı ile, çünkü oyun hala akıyor)
+        yield return new WaitForSeconds(stopGameDelay);
+
+        // Zamanı dondur
+        Time.timeScale = 0f;
+        
+        if (showDebugInfo) Debug.Log("<color=red>■ OYUN DURDURULDU (Time.timeScale = 0) ■</color>");
+        
+        // Buraya istersen bir "Level Complete" UI paneli açma kodu da ekleyebilirsin.
+        // Orneğin: UIManager.Instance.ShowEndScreen();
     }
 
     public void StartSong()
     {
         if (!songLoaded) return;
+        
+        // Eğer oyun daha önce durdurulduysa zamanı tekrar başlatmamız lazım
+        Time.timeScale = 1f; 
+
         startDelay = delayBeforeStart;
         isPlaying = false;
         timer = 0f;
@@ -215,6 +245,10 @@ public class SongPlayer : MonoBehaviour
 
     public void RestartSong()
     {
+        // Restart atılırsa zamanı tekrar normale döndür
+        Time.timeScale = 1f;
+        StopAllCoroutines(); // Eğer durdurma sayacı çalışıyorsa iptal et
+
         timer = 0f;
         currentBeatIndex = 0;
         startDelay = delayBeforeStart;
@@ -224,7 +258,5 @@ public class SongPlayer : MonoBehaviour
     }
 
     public bool IsPlaying => isPlaying;
-    // Progress barı doğru göstermek için hesaplamayı da güncelleyebiliriz ama 
-    // oran olarak index/count mantığı hala geçerli sayılır.
     public float Progress => song != null && song.notes.Count > 0 ? (float)currentBeatIndex / song.notes.Count : 0f;
 }
