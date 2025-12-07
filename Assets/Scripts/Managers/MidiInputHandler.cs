@@ -1,5 +1,4 @@
 ﻿using UnityEngine;
-using System.Collections.Generic;
 using MidiJack;
 
 public class MidiInputHandler : MonoBehaviour
@@ -8,17 +7,18 @@ public class MidiInputHandler : MonoBehaviour
     public MidiGameManager gameManager;
 
     [Header("MIDI Ayarları")]
-    public int[] noteToLaneMap = new int[12] 
-    { 
-        48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59 
+    // 12 lane için MIDI notaları
+    public int[] noteToLaneMap = new int[12]
+    {
+        48, 49, 50, 51, 52, 53, 54, 55, 56, 57, 58, 59
     };
 
     [Header("Debug - Klavye ile Test")]
     public bool useKeyboardForTesting = true;
     public KeyCode[] testKeys = new KeyCode[12]
     {
-        KeyCode.Z, KeyCode.S, KeyCode.X, KeyCode.D, 
-        KeyCode.C, KeyCode.V, KeyCode.G, KeyCode.B, 
+        KeyCode.Z, KeyCode.S, KeyCode.X, KeyCode.D,
+        KeyCode.C, KeyCode.V, KeyCode.G, KeyCode.B,
         KeyCode.H, KeyCode.N, KeyCode.J, KeyCode.M
     };
 
@@ -42,18 +42,20 @@ public class MidiInputHandler : MonoBehaviour
 
     void HandleMidiInput()
     {
+        if (gameManager == null) return;
+
         for (int i = 0; i < noteToLaneMap.Length && i < 12; i++)
         {
             int midiNoteNumber = noteToLaneMap[i];
 
-            // 1. BASMA (Ses Başlar)
+            // BASMA
             if (MidiMaster.GetKeyDown(midiNoteNumber))
             {
                 float velocity = MidiMaster.GetKey(midiNoteNumber);
                 OnNotePressed(i, velocity, "MIDI");
             }
 
-            // 2. BIRAKMA (Ses Durur) - BU KISIM EKSİKTİ
+            // BIRAKMA
             if (MidiMaster.GetKeyUp(midiNoteNumber))
             {
                 OnNoteReleased(i, "MIDI");
@@ -63,15 +65,17 @@ public class MidiInputHandler : MonoBehaviour
 
     void HandleKeyboardInput()
     {
+        if (gameManager == null) return;
+
         for (int i = 0; i < testKeys.Length && i < 12; i++)
         {
-            // 1. BASMA
+            // BASMA
             if (Input.GetKeyDown(testKeys[i]))
             {
                 OnNotePressed(i, 1.0f, "Keyboard");
             }
 
-            // 2. BIRAKMA - BU KISIM EKSİKTİ
+            // BIRAKMA
             if (Input.GetKeyUp(testKeys[i]))
             {
                 OnNoteReleased(i, "Keyboard");
@@ -81,22 +85,18 @@ public class MidiInputHandler : MonoBehaviour
 
     private void OnNotePressed(int lane, float velocity, string source)
     {
-        if (gameManager != null)
-        {
-            gameManager.OnMidiKeyPressed(lane);
-        }
-        if (showDebugLog) Debug.Log($"[{source} BASILDI] Lane: {lane}");
+        gameManager.OnMidiKeyPressed(lane);
+
+        if (showDebugLog)
+            Debug.Log($"[{source} BASILDI] Lane: {lane}, Velocity: {velocity:F2}");
     }
 
-    // YENİ EKLENEN BIRAKMA FONKSİYONU
     private void OnNoteReleased(int lane, string source)
     {
-        if (gameManager != null)
-        {
-            // Manager'a "Bıraktı" haberini yolluyoruz
-            gameManager.OnMidiKeyReleased(lane);
-        }
-        if (showDebugLog) Debug.Log($"[{source} BIRAKILDI] Lane: {lane}");
+        gameManager.OnMidiKeyReleased(lane);
+
+        if (showDebugLog)
+            Debug.Log($"[{source} BIRAKILDI] Lane: {lane}");
     }
 
     void OnValidate()
